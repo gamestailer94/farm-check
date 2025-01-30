@@ -75,10 +75,26 @@ The tool outputs:
 3. Reports PASS if the difference is 1 hour or less
 4. Reports FAIL if the difference is greater, indicating possible tampering
 
-## Security Note
+## Security Warning
 
-Both standalone and Docker methods require root/admin privileges to read SMART data from drives. Only run this tool on systems you trust and control. The Docker container requires `--privileged` access.
+⚠️ **IMPORTANT SECURITY NOTICE** ⚠️
+
+Both standalone and Docker methods require root/admin privileges to read SMART data from drives. The Docker container requires `--privileged` access, which gives the container full access to all devices on your host system. This is a significant security risk if misused.
+
+**NEVER run untrusted containers with --privileged access!** This gives the container complete control over your host system, including:
+- Full access to all devices and drives
+- Ability to modify system settings
+- Potential to compromise your entire system
+
+Only run this tool:
+- On systems you fully trust and control
+- With containers you've built yourself or obtained from verified sources
+- When you understand the security implications of privileged access
+
+## License
+
+This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
 
 ## Disclaimer
 
-This tool is provided as-is for informational purposes. Always purchase storage devices from reputable sources and validate warranty status through official channels.
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
