@@ -70,7 +70,7 @@ Replace `/dev/sdX` with your drive's device path (e.g., `/dev/sda`).
 git clone https://github.com/gamestailer94/farm-check.git
 cd farm-check
 docker build -t farm-check .
-docker run --privileged -v /dev:/dev farm-check /dev/sdX
+docker run --rm --privileged -v /dev:/dev farm-check /dev/sdX
 ```
 
 ## Output
