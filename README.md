@@ -18,7 +18,7 @@ In legitimate new drives, these values should be nearly identical. A significant
 - Linux system
 - smartmontools version 7.4 or higher
 - Root/admin privileges (needed for SMART access)
-- A Seagate hard drive to check
+- Any hard drive (Seagate drives required for FARM check, other drives will be skipped)
 
 #### Installation
 Install smartmontools (version ≥ 7.4):
@@ -33,7 +33,14 @@ dnf install smartmontools
 #### Running the Check
 ```bash
 chmod +x check.sh
+# Check a single drive
 sudo ./check.sh /dev/sdX
+
+# Check multiple drives
+sudo ./check.sh /dev/sda /dev/sdb
+
+# Check all drives
+sudo ./check.sh ALL
 ```
 Replace `/dev/sdX` with your drive's device path (e.g., `/dev/sda`).
 
@@ -42,12 +49,19 @@ Replace `/dev/sdX` with your drive's device path (e.g., `/dev/sda`).
 #### Requirements
 - Docker
 - Root/admin privileges
-- A Seagate hard drive to check
+- A Seagate hard drive (FARM is Seagate Specific)
 
 #### Using Pre-built Image
 ```bash
 docker pull ghcr.io/gamestailer94/farm-check:latest
+# Check a single drive
 docker run --privileged -v /dev:/dev ghcr.io/gamestailer94/farm-check:latest /dev/sdX
+
+# Check multiple drives
+docker run --privileged -v /dev:/dev ghcr.io/gamestailer94/farm-check:latest /dev/sda /dev/sdb
+
+# Check all drives
+docker run --privileged -v /dev:/dev ghcr.io/gamestailer94/farm-check:latest ALL
 ```
 Replace `/dev/sdX` with your drive's device path (e.g., `/dev/sda`).
 
@@ -62,18 +76,25 @@ docker run --privileged -v /dev:/dev farm-check /dev/sdX
 ## Output
 
 The tool outputs:
+- Device: Name of the device being checked
 - SMART: Power-on hours from SMART attributes
-- FARM: Power-on hours from Seagate FARM log
+- FARM: Power-on hours from Seagate FARM log (N/A for non-Seagate drives)
 - RESULT: 
   - PASS: If the difference between SMART and FARM hours is ≤ 1
-  - FAIL: If the difference is > 1, suggesting potential fraud
+  - FAIL: If the difference is > 1, suggesting potential fraud (shown in red if terminal supports color)
+  - SKIP: If the drive is not a Seagate drive (no FARM data available)
 
 ## How it Works
 
 1. Uses smartmontools to read both SMART and FARM power-on hour values
-2. Calculates the absolute difference between these values
-3. Reports PASS if the difference is 1 hour or less
-4. Reports FAIL if the difference is greater, indicating possible tampering
+2. Detects if the drive is a Seagate drive by checking for FARM data
+3. For Seagate drives:
+   - Calculates the absolute difference between SMART and FARM values
+   - Reports PASS if the difference is 1 hour or less
+   - Reports FAIL if the difference is greater, indicating possible tampering
+4. For non-Seagate drives:
+   - Reports SKIP as FARM data is not available
+   - Still displays SMART hours for reference
 
 ## Security Warning
 
