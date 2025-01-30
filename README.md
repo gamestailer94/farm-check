@@ -55,13 +55,13 @@ Replace `/dev/sdX` with your drive's device path (e.g., `/dev/sda`).
 ```bash
 docker pull ghcr.io/gamestailer94/farm-check:latest
 # Check a single drive
-docker run --privileged -v /dev:/dev ghcr.io/gamestailer94/farm-check:latest /dev/sdX
+docker run --rm --privileged -v /dev:/dev ghcr.io/gamestailer94/farm-check:latest /dev/sdX
 
 # Check multiple drives
-docker run --privileged -v /dev:/dev ghcr.io/gamestailer94/farm-check:latest /dev/sda /dev/sdb
+docker run --rm --privileged -v /dev:/dev ghcr.io/gamestailer94/farm-check:latest /dev/sda /dev/sdb
 
 # Check all drives
-docker run --privileged -v /dev:/dev ghcr.io/gamestailer94/farm-check:latest ALL
+docker run --rm --privileged -v /dev:/dev ghcr.io/gamestailer94/farm-check:latest ALL
 ```
 Replace `/dev/sdX` with your drive's device path (e.g., `/dev/sda`).
 
