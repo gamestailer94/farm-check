@@ -1,14 +1,16 @@
-# HDD Farm Check
+# Seagate HDD Farm Check
 
 A tool to detect potentially fraudulent hard drives by comparing SMART and FARM power-on hours, as highlighted in the [Seagate HDD scandal](https://www.heise.de/en/news/Fraud-with-Seagate-hard-disks-Dozens-of-readers-report-suspected-cases-10259237.html).
 
+**IMPORTANT**: This tool is specifically designed for Seagate hard drives only. While it can read basic SMART data from any drive, the tool is practically useless for non-Seagate drives as the core FARM verification functionality is exclusively available for Seagate drives. Non-Seagate drives will be skipped during verification.
+
 ## Background
 
-Recent reports have revealed cases of used Seagate hard drives being sold as new. This tool helps identify such cases by comparing two different power-on hour counters:
+Recent reports have revealed cases of used Seagate hard drives being sold as new. This tool helps identify such cases by comparing two different power-on hour counters that are specific to Seagate drives:
 - SMART Power-On Hours: The standard SMART attribute tracking total power-on time
-- FARM Power-On Hours: A separate counter in Seagate's FARM log
+- FARM Power-On Hours: A separate counter in Seagate's proprietary FARM log
 
-In legitimate new drives, these values should be nearly identical. A significant difference between these counters may indicate a used drive being sold as new.
+In legitimate new Seagate drives, these values should be nearly identical. A significant difference between these counters may indicate a used drive being sold as new.
 
 ## Installation & Usage
 
@@ -18,7 +20,6 @@ In legitimate new drives, these values should be nearly identical. A significant
 - Linux system
 - smartmontools version 7.4 or higher
 - Root/admin privileges (needed for SMART access)
-- Any hard drive (Seagate drives required for FARM check, other drives will be skipped)
 
 #### Installation
 Install smartmontools (version ≥ 7.4):
@@ -49,7 +50,6 @@ Replace `/dev/sdX` with your drive's device path (e.g., `/dev/sda`).
 #### Requirements
 - Docker
 - Root/admin privileges
-- A Seagate hard drive (FARM is Seagate Specific)
 
 #### Using Pre-built Image
 ```bash
