@@ -1,6 +1,6 @@
 # Seagate HDD Farm Check
 
-A tool to detect potentially fraudulent hard drives by comparing SMART and FARM power-on hours, as highlighted in the [Seagate HDD scandal](https://www.heise.de/en/news/Fraud-with-Seagate-hard-disks-Dozens-of-readers-report-suspected-cases-10259237.html).
+A tool to detect potentially fraudulent hard drives by comparing SMART and FARM power-on hours, as highlighted in the [possible Seagate hard disk fraud investigation reported by heise](https://www.heise.de/en/news/Fraud-with-Seagate-hard-disks-Dozens-of-readers-report-suspected-cases-10259237.html).
 
 **IMPORTANT**: This tool is specifically designed for Seagate hard drives only. While it can read basic SMART data from any drive, the tool is practically useless for non-Seagate drives as the core FARM verification functionality is exclusively available for Seagate drives. Non-Seagate drives will be skipped during verification.
 
