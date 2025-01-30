@@ -81,7 +81,7 @@ The tool outputs:
 - FARM: Power-on hours from Seagate FARM log (N/A for non-Seagate drives)
 - RESULT: 
   - PASS: If the difference between SMART and FARM hours is ≤ 1
-  - FAIL: If the difference is > 1, suggesting potential fraud (shown in red if terminal supports color)
+  - FAIL: If the difference is > 1, suggesting potential fraud
   - SKIP: If the drive is not a Seagate drive (no FARM data available)
 
 ## How it Works
