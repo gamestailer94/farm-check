@@ -56,12 +56,26 @@ check_device() {
 
 # Handle ALL case
 if [ "$1" = "ALL" ]; then
-    # Check all potential block devices (sd*, sata*, sas*)
-    for device in /dev/sd* /dev/sata* /dev/sas*; do
-        # Skip if pattern didn't match any devices
-        [ -e "$device" ] || continue
+    # /dev/sd* block devices
+    for device in /dev/sd*; do
         # Skip partition devices (e.g., /dev/sda1)
         if ! echo "$device" | grep -q '[0-9]$'; then
+            check_device "$device"
+        fi
+    done
+
+    # Synology /dev/sata* block devices
+    for device in /dev/sata*; do
+        # Skip partition devices (e.g., /dev/sata1p1)
+        if echo "$device" | grep -q -E 'sata[0-9][0-9]?[0-9]?$'; then
+            check_device "$device"
+        fi
+    done
+
+    # Synology /dev/sas* block devices
+    for device in /dev/sas*; do
+        # Skip partition devices (e.g., /dev/sas1p1)
+        if echo "$device" | grep -q -E 'sas[0-9][0-9]?[0-9]?$'; then
             check_device "$device"
         fi
     done
