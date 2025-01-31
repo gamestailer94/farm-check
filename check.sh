@@ -56,7 +56,10 @@ check_device() {
 
 # Handle ALL case
 if [ "$1" = "ALL" ]; then
-    for device in /dev/sd*; do
+    # Check all potential block devices (sd*, sata*, sas*)
+    for device in /dev/sd* /dev/sata* /dev/sas*; do
+        # Skip if pattern didn't match any devices
+        [ -e "$device" ] || continue
         # Skip partition devices (e.g., /dev/sda1)
         if ! echo "$device" | grep -q '[0-9]$'; then
             check_device "$device"
