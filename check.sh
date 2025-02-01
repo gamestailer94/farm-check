@@ -27,6 +27,9 @@ check_device() {
     echo "=== Checking device: $DEVICE ==="
     
     SMART_HOURS=$(smartctl -a "$DEVICE" | awk '/Power_On_Hours/{print $10}' | head -n 1)
+    if [ -z "$SMART_HOURS" ]; then
+        SMART_HOURS=$(smartctl -a -d sat "$DEVICE" | awk '/Power_On_Hours/{print $10}' | head -n 1)
+    fi
     FARM_HOURS=$(smartctl -l farm "$DEVICE" | awk '/Power on Hours:/{print $4}' | head -n 1)
     
     # Check if FARM hours are available
