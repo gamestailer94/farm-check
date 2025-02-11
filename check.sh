@@ -1,5 +1,11 @@
 #!/usr/bin/env bash
 
+colors=(
+    "\e[0m"  # 0 - Reset
+    "\e[31m" # 1 - Red
+    "\e[32m" # 2 - Green
+)
+
 if [[ ${#} -eq 0 ]]; then
     echo "Usage: $0 <block_device> [block_device2 ...]"
     echo "       Use ALL to automatically check all block devices"
@@ -70,9 +76,9 @@ function check_device {
     abs_diff=${diff#-}  # Remove negative sign
     
     if [[ "${abs_diff}" -le "1" ]]; then
-        echo "Device check:        PASS"
+        echo -e "Device check:         ${colors[2]}PASS${colors[0]}"
     else
-        echo "Device check:        FAIL"
+        echo -e "Device check:         ${colors[1]}FAIL${colors[0]}"
     fi
     echo
 }
