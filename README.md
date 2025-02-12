@@ -96,6 +96,30 @@ The tool outputs:
    - Reports SKIP as FARM data is not available
    - Still displays SMART hours for reference
 
+## Windows Implementation
+
+### System Requirements
+
+- Windows 10 or later
+- PowerShell 5.1 or PowerShell Core 7.x
+- Smartmontools for Windows (v7.4 or later)
+- Administrator privileges
+
+### Installation & Setup
+
+1. Download and install Smartmontools from the official website:
+   - [Smartmontools for Windows](https://www.smartmontools.org/wiki/Download#InstalltheWindowspackage)
+   - Default installation path: `C:\Program Files\smartmontools\`
+
+2. Download the PowerShell script from the `windows` directory
+3. Run PowerShell as Administrator
+4. Enable script execution if needed:
+   ```powershell
+   Set-ExecutionPolicy -ExecutionPolicy RemoteSigned -Scope Process
+   ```
+
+For detailed instructions and usage examples, refer to the [Windows Documentation](./windows/README.md).
+
 ## Security Warning
 
 ⚠️ **IMPORTANT SECURITY NOTICE** ⚠️
@@ -119,3 +143,4 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 ## Disclaimer
 
 THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
+````

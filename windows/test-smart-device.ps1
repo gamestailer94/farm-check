@@ -68,8 +68,8 @@ function Test-SmartDrive {
     
     try {
         # Convert strings to integers and calculate absolute difference
-        $smartHoursInt = [int]$smartHours
-        $farmHoursInt = [int]$farmHours
+        $smartHoursInt = [long]$smartHours
+        $farmHoursInt = [long]$farmHours
         $diff = [math]::Abs($smartHoursInt - $farmHoursInt)
         
         if ($diff -le 1) {
