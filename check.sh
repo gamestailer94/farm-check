@@ -1,7 +1,8 @@
 #!/bin/sh
 
-# Initialize device type parameter
+# Initialize parameters
 DEVICE_TYPE=""
+DEBUG=0
 
 # Parse command line arguments
 while [ $# -gt 0 ]; do
@@ -15,6 +16,10 @@ while [ $# -gt 0 ]; do
             DEVICE_TYPE="$1"
             shift
             ;;
+        --debug)
+            DEBUG=1
+            shift
+            ;;
         *)
             break
             ;;
@@ -22,9 +27,10 @@ while [ $# -gt 0 ]; do
 done
 
 if [ $# -eq 0 ]; then
-    echo "Usage: $0 [-d device_type] <block_device> [block_device2 ...]"
+    echo "Usage: $0 [-d device_type] [--debug] <block_device> [block_device2 ...]"
     echo "       Use ALL to try to find all block devices"
     echo "       Use -d to specify device type (see smartctl(8) for available types)"
+    echo "       Use --debug to print full SMART data and FARM output for debugging"
     exit 1
 fi
 
@@ -74,6 +80,19 @@ check_device() {
     # Get all SMART data once and store it
     SMART_DATA=$($SMARTCTL_CMD -a "$DEVICE")
     
+    # Get FARM data for debugging
+    FARM_OUTPUT=$($SMARTCTL_CMD -l farm "$DEVICE")
+    
+    # Print debug information if requested
+    if [ $DEBUG -eq 1 ]; then
+        echo "=== DEBUG: Full SMART data for $DEVICE ==="
+        echo "$SMART_DATA"
+        echo
+        echo "=== DEBUG: Full FARM output for $DEVICE ==="
+        echo "$FARM_OUTPUT"
+        echo
+    fi
+    
     # Extract information from the stored SMART data using awk to get only the values
     FAMILY=$(echo "$SMART_DATA" | awk -F':' '/Model Family/{gsub(/^[ \t]+/, "", $2); print $2}')
     if [ -z "$FAMILY" ]; then
@@ -96,7 +115,7 @@ check_device() {
     echo
 
     SMART_HOURS=$(echo "$SMART_DATA" | awk '/Power_On_Hours/{print $10}' | head -n 1)
-    FARM_HOURS=$($SMARTCTL_CMD -l farm "$DEVICE" | awk '/Power on Hours:/{print $4}' | head -n 1)
+    FARM_HOURS=$(echo "$FARM_OUTPUT" | awk '/Power on Hours:/{print $4}' | head -n 1)
 
     # Check if FARM hours are available
     if [ -z "$FARM_HOURS" ]; then
