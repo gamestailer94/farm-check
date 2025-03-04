@@ -108,6 +108,25 @@ The tool outputs:
    - Reports SKIP as FARM data is not available
    - Still displays SMART hours for reference
 
+## FAQ
+
+**Q: The drives on my QNAP NAS are not detected!**
+
+**A:** Add `-d sat` to the command, see #13 #5
+
+**Q: Why does it say N/A in Model Family?**
+
+**A:** Some devices do not report the model family. Sometimes smartctl knows that Model Number and can supply the family, but not always. This happens mostly with newer drive models.
+
+**Q: My Seagate drives are not detected!**
+
+**A:** Please open a new issue with the output of the `--debug` option and your system information. Sometimes a specific `-d` option is required.
+
+**Q: Why is the power shell (Windows) Version different to the linux version?**
+
+**A:** This script was initially only intended as a docker image. The Windows Version was provided by contributors (@wapenshaw).  
+I do not know enough Powershell, nor do I have a system where I can test it, to further refine that script.
+
 ## Windows Implementation
 
 ### System Requirements
