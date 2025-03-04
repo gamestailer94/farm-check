@@ -11,6 +11,13 @@ if ! command -v smartctl &> /dev/null; then
     exit 1
 fi
 
+# Check smartctl version
+SMARTCTL_VERSION=$(smartctl -V | head -n 1 | awk '{print $2}')
+if [ "$(printf '%s\n' "7.4" "$SMARTCTL_VERSION" | sort -V | head -n1)" != "7.4" ]; then
+    echo "Error: smartctl version $SMARTCTL_VERSION is less than required version 7.4."
+    exit 1
+fi
+
 check_device() {
     local DEVICE=$1
     
