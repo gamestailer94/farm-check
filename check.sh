@@ -34,7 +34,7 @@ if [ $# -eq 0 ]; then
     exit 1
 fi
 
-if ! command -v smartctl &> /dev/null; then
+if ! smartctl -V &> /dev/null; then
     echo "Error: smartctl not found. Please install smartmontools."
     exit 1
 fi
