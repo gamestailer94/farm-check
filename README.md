@@ -42,8 +42,15 @@ sudo ./check.sh /dev/sda /dev/sdb
 
 # Check all drives
 sudo ./check.sh ALL
+
+# Specify device type (see smartctl(8) for available types)
+sudo ./check.sh -d sat /dev/sdX
 ```
 Replace `/dev/sdX` with your drive's device path (e.g., `/dev/sda`).
+
+##### Command Line Options
+- `-d device_type`: Specify the device type for smartctl (see smartctl(8) manual for available types)
+- `--debug`: Enable debug mode to print full SMART data and FARM output for debugging purposes
 
 ### Docker Usage
 
@@ -62,8 +69,13 @@ docker run --rm --privileged -v /dev:/dev ghcr.io/gamestailer94/farm-check:lates
 
 # Check all drives
 docker run --rm --privileged -v /dev:/dev ghcr.io/gamestailer94/farm-check:latest ALL
+
+# Specify device type (see smartctl(8) for available types)
+docker run --rm --privileged -v /dev:/dev ghcr.io/gamestailer94/farm-check:latest -d sat /dev/sdX
 ```
 Replace `/dev/sdX` with your drive's device path (e.g., `/dev/sda`).
+
+The same command line options (`-d device_type` and `--debug`) are available when running via Docker.
 
 #### Building Locally
 ```bash
