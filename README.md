@@ -14,6 +14,41 @@ In legitimate new Seagate drives, these values should be nearly identical. A sig
 
 ## Installation & Usage
 
+### Command Line Options
+- `-d device_type`: Specify the device type for smartctl (see smartctl(8) manual for available types)
+- `--debug`: Enable debug mode to print full SMART data and FARM output for debugging purposes
+
+### Docker Usage (Recommended)
+
+#### Requirements
+- Docker
+- Root/admin privileges
+
+#### Using Pre-built Image (Be aware of the risks!)
+```bash
+docker pull ghcr.io/gamestailer94/farm-check:latest
+# Check a single drive
+docker run --rm --privileged -v /dev:/dev ghcr.io/gamestailer94/farm-check:latest /dev/sdX
+
+# Check multiple drives
+docker run --rm --privileged -v /dev:/dev ghcr.io/gamestailer94/farm-check:latest /dev/sda /dev/sdb
+
+# Check all drives
+docker run --rm --privileged -v /dev:/dev ghcr.io/gamestailer94/farm-check:latest ALL
+
+# Specify device type (see smartctl(8) for available types, might be needed for some NAS Systems)
+docker run --rm --privileged -v /dev:/dev ghcr.io/gamestailer94/farm-check:latest -d sat /dev/sdX
+```
+Replace `/dev/sdX` with your drive's device path (e.g., `/dev/sda`).
+
+#### Building Locally
+```bash
+git clone https://github.com/gamestailer94/farm-check.git
+cd farm-check
+docker build -t farm-check .
+docker run --rm --privileged -v /dev:/dev farm-check /dev/sdX
+```
+
 ### Standalone Usage
 
 #### Requirements
@@ -48,42 +83,6 @@ sudo ./check.sh -d sat /dev/sdX
 ```
 Replace `/dev/sdX` with your drive's device path (e.g., `/dev/sda`).
 
-##### Command Line Options
-- `-d device_type`: Specify the device type for smartctl (see smartctl(8) manual for available types)
-- `--debug`: Enable debug mode to print full SMART data and FARM output for debugging purposes
-
-### Docker Usage
-
-#### Requirements
-- Docker
-- Root/admin privileges
-
-#### Using Pre-built Image
-```bash
-docker pull ghcr.io/gamestailer94/farm-check:latest
-# Check a single drive
-docker run --rm --privileged -v /dev:/dev ghcr.io/gamestailer94/farm-check:latest /dev/sdX
-
-# Check multiple drives
-docker run --rm --privileged -v /dev:/dev ghcr.io/gamestailer94/farm-check:latest /dev/sda /dev/sdb
-
-# Check all drives
-docker run --rm --privileged -v /dev:/dev ghcr.io/gamestailer94/farm-check:latest ALL
-
-# Specify device type (see smartctl(8) for available types)
-docker run --rm --privileged -v /dev:/dev ghcr.io/gamestailer94/farm-check:latest -d sat /dev/sdX
-```
-Replace `/dev/sdX` with your drive's device path (e.g., `/dev/sda`).
-
-The same command line options (`-d device_type` and `--debug`) are available when running via Docker.
-
-#### Building Locally
-```bash
-git clone https://github.com/gamestailer94/farm-check.git
-cd farm-check
-docker build -t farm-check .
-docker run --rm --privileged -v /dev:/dev farm-check /dev/sdX
-```
 
 ## Output
 
