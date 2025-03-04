@@ -1,8 +1,30 @@
 #!/bin/sh
 
+# Initialize device type parameter
+DEVICE_TYPE=""
+
+# Parse command line arguments
+while [ $# -gt 0 ]; do
+    case "$1" in
+        -d)
+            shift
+            if [ $# -eq 0 ]; then
+                echo "Error: -d requires a parameter"
+                exit 1
+            fi
+            DEVICE_TYPE="$1"
+            shift
+            ;;
+        *)
+            break
+            ;;
+    esac
+done
+
 if [ $# -eq 0 ]; then
-    echo "Usage: $0 <block_device> [block_device2 ...]"
-    echo "       Use ALL to automatically check all block devices"
+    echo "Usage: $0 [-d device_type] <block_device> [block_device2 ...]"
+    echo "       Use ALL to try to find all block devices"
+    echo "       Use -d to specify device type (see smartctl(8) for available types)"
     exit 1
 fi
 
@@ -33,15 +55,21 @@ check_device() {
     
     echo "=== Checking device: $DEVICE ==="
 
-    FAMILY=$(smartctl -a "$DEVICE" | grep 'Model Family')
+    # Prepare smartctl command with device type if specified
+    SMARTCTL_CMD="smartctl"
+    if [ -n "$DEVICE_TYPE" ]; then
+        SMARTCTL_CMD="$SMARTCTL_CMD -d $DEVICE_TYPE"
+    fi
+
+    FAMILY=$($SMARTCTL_CMD -a "$DEVICE" | grep 'Model Family')
     if [ -z "$FAMILY" ]; then
         FAMILY="Model Family: N/A (smartmontools does not know this device or device does not report Model Family)"
     fi
-    MODLE=$(smartctl -a "$DEVICE" | grep 'Device Model')
+    MODLE=$($SMARTCTL_CMD -a "$DEVICE" | grep 'Device Model')
     if [ -z "$MODLE" ]; then
         MODLE="Device Model: N/A (smartmontools does not know this device or device does not report Device Model)"
     fi
-    SERIAL=$(smartctl -a "$DEVICE" | grep 'Serial Number')
+    SERIAL=$($SMARTCTL_CMD -a "$DEVICE" | grep 'Serial Number')
     if [ -z "$SERIAL" ]; then
         SERIAL="Serial Number: N/A (smartmontools does not know this device or device does not report Serial Number)"
     fi
@@ -50,8 +78,8 @@ check_device() {
     echo "$MODLE"
     echo "$SERIAL"
 
-    SMART_HOURS=$(smartctl -a "$DEVICE" | awk '/Power_On_Hours/{print $10}' | head -n 1)
-    FARM_HOURS=$(smartctl -l farm "$DEVICE" | awk '/Power on Hours:/{print $4}' | head -n 1)
+    SMART_HOURS=$($SMARTCTL_CMD -a "$DEVICE" | awk '/Power_On_Hours/{print $10}' | head -n 1)
+    FARM_HOURS=$($SMARTCTL_CMD -l farm "$DEVICE" | awk '/Power on Hours:/{print $4}' | head -n 1)
 
     # Check if FARM hours are available
     if [ -z "$FARM_HOURS" ]; then
@@ -80,6 +108,11 @@ check_device() {
 
 # Handle ALL case
 if [ "$1" = "ALL" ]; then
+    echo "Trying to detect all block devices..."
+    echo "This only works for /dev/sd*, /dev/sata* and /dev/sas* devices."
+    echo "For other devices, please specify the device explicitly."
+    echo
+
     # /dev/sd* block devices
     for device in /dev/sd*; do
         # Skip partition devices (e.g., /dev/sda1)
