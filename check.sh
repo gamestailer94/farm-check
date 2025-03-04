@@ -61,24 +61,31 @@ check_device() {
         SMARTCTL_CMD="$SMARTCTL_CMD -d $DEVICE_TYPE"
     fi
 
-    FAMILY=$($SMARTCTL_CMD -a "$DEVICE" | grep 'Model Family')
+    # Get all SMART data once and store it
+    SMART_DATA=$($SMARTCTL_CMD -a "$DEVICE")
+    
+    # Extract information from the stored SMART data using awk to get only the values
+    FAMILY=$(echo "$SMART_DATA" | awk -F':' '/Model Family/{gsub(/^[ \t]+/, "", $2); print $2}')
     if [ -z "$FAMILY" ]; then
-        FAMILY="Model Family: N/A (smartmontools does not know this device or device does not report Model Family)"
-    fi
-    MODLE=$($SMARTCTL_CMD -a "$DEVICE" | grep 'Device Model')
-    if [ -z "$MODLE" ]; then
-        MODLE="Device Model: N/A (smartmontools does not know this device or device does not report Device Model)"
-    fi
-    SERIAL=$($SMARTCTL_CMD -a "$DEVICE" | grep 'Serial Number')
-    if [ -z "$SERIAL" ]; then
-        SERIAL="Serial Number: N/A (smartmontools does not know this device or device does not report Serial Number)"
+        FAMILY="N/A (smartmontools does not know this device or device does not report Model Family)"
     fi
     
-    echo "$FAMILY"
-    echo "$MODLE"
-    echo "$SERIAL"
+    MODEL=$(echo "$SMART_DATA" | awk -F':' '/Device Model/{gsub(/^[ \t]+/, "", $2); print $2}')
+    if [ -z "$MODEL" ]; then
+        MODEL="N/A (smartmontools does not know this device or device does not report Device Model)"
+    fi
+    
+    SERIAL=$(echo "$SMART_DATA" | awk -F':' '/Serial Number/{gsub(/^[ \t]+/, "", $2); print $2}')
+    if [ -z "$SERIAL" ]; then
+        SERIAL="N/A (smartmontools does not know this device or device does not report Serial Number)"
+    fi
+    
+    echo "Model Family:     $FAMILY"
+    echo "Device Model:     $MODEL"
+    echo "Serial Number:    $SERIAL"
+    echo 
 
-    SMART_HOURS=$($SMARTCTL_CMD -a "$DEVICE" | awk '/Power_On_Hours/{print $10}' | head -n 1)
+    SMART_HOURS=$(echo "$SMART_DATA" | awk '/Power_On_Hours/{print $10}' | head -n 1)
     FARM_HOURS=$($SMARTCTL_CMD -l farm "$DEVICE" | awk '/Power on Hours:/{print $4}' | head -n 1)
 
     # Check if FARM hours are available
