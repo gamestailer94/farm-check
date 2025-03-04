@@ -40,6 +40,16 @@ if [ "$(printf '%s\n' "7.4" "$SMARTCTL_VERSION" | sort -V | head -n1)" != "7.4" 
     exit 1
 fi
 
+format_output_column() {
+    local name=$1
+    local value=$2
+    # add : to the name if it is not empty
+    if [ -n "$name" ]; then
+        name="$name:"
+    fi
+    printf "%-15s %s\n" "$name" "$value"
+}
+
 check_device() {
     local DEVICE=$1
     
@@ -80,36 +90,38 @@ check_device() {
         SERIAL="N/A (smartmontools does not know this device or device does not report Serial Number)"
     fi
     
-    echo "Model Family:     $FAMILY"
-    echo "Device Model:     $MODEL"
-    echo "Serial Number:    $SERIAL"
-    echo 
+    format_output_column "Model Family" "$FAMILY"
+    format_output_column "Device Model" "$MODEL"
+    format_output_column "Serial Number" "$SERIAL"
+    echo
 
     SMART_HOURS=$(echo "$SMART_DATA" | awk '/Power_On_Hours/{print $10}' | head -n 1)
     FARM_HOURS=$($SMARTCTL_CMD -l farm "$DEVICE" | awk '/Power on Hours:/{print $4}' | head -n 1)
 
     # Check if FARM hours are available
     if [ -z "$FARM_HOURS" ]; then
-        echo "FARM data not available - likely not a Seagate drive"
-        echo "SMART: $SMART_HOURS"
-        echo "FARM: N/A"
-        echo "RESULT: SKIP"
+        format_output_column "" "FARM data not available - likely not a Seagate drive"
+        format_output_column "SMART" "$SMART_HOURS"
+        format_output_column "FARM" "N/A"
+        format_output_column "RESULT" "SKIP"
         echo
         return
     fi
-    
-    echo "SMART: $SMART_HOURS"
-    echo "FARM: $FARM_HOURS"
     
     # Calculate absolute difference
     DIFF=$(( SMART_HOURS - FARM_HOURS ))
     ABS_DIFF=${DIFF#-}  # Remove negative sign
     
+    # Determine result
+    RESULT="FAIL"
     if [ $ABS_DIFF -le 1 ]; then
-        echo "RESULT: PASS"
-    else
-        echo "RESULT: FAIL"
+        RESULT="PASS"
     fi
+    
+    format_output_column "SMART" "$SMART_HOURS"
+    format_output_column "FARM" "$FARM_HOURS"
+    format_output_column "RESULT" "$RESULT"
+
     echo
 }
 
