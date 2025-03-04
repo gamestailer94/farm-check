@@ -112,7 +112,7 @@ The tool outputs:
 
 **Q: The drives on my QNAP NAS are not detected!**
 
-**A:** Add `-d sat` to the command, see #13 #5
+**A:** Add `-d sat` to the command, see [#13](https://github.com/gamestailer94/farm-check/issues/13), [#5](https://github.com/gamestailer94/farm-check/issues/5)
 
 **Q: Why does it say N/A in Model Family?**
 
@@ -124,7 +124,7 @@ The tool outputs:
 
 **Q: Why is the power shell (Windows) Version different to the linux version?**
 
-**A:** This script was initially only intended as a docker image. The Windows Version was provided by contributors (@wapenshaw).  
+**A:** This script was initially only intended as a docker image. The Windows Version was provided by contributors ([@wapenshaw](https://github.com/wapenshaw)).
 I do not know enough Powershell, nor do I have a system where I can test it, to further refine that script.
 
 ## Windows Implementation
