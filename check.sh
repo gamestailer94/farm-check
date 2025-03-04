@@ -26,11 +26,25 @@ check_device() {
     
     echo "=== Checking device: $DEVICE ==="
 
-    IDENTIFICATION=$(smartctl -a "$DEVICE" | grep -A2 'Model Family')
+    FAMILY=$(smartctl -a "$DEVICE" | grep 'Model Family')
+    if [ -z "$FAMILY" ]; then
+        FAMILY="Model Family: N/A (smartmontools does not know this device or device does not report Model Family)"
+    fi
+    MODLE=$(smartctl -a "$DEVICE" | grep 'Device Model')
+    if [ -z "$MODLE" ]; then
+        MODLE="Device Model: N/A (smartmontools does not know this device or device does not report Device Model)"
+    fi
+    SERIAL=$(smartctl -a "$DEVICE" | grep 'Serial Number')
+    if [ -z "$SERIAL" ]; then
+        SERIAL="Serial Number: N/A (smartmontools does not know this device or device does not report Serial Number)"
+    fi
+    
+    echo "$FAMILY"
+    echo "$MODLE"
+    echo "$SERIAL"
+
     SMART_HOURS=$(smartctl -a "$DEVICE" | awk '/Power_On_Hours/{print $10}' | head -n 1)
     FARM_HOURS=$(smartctl -l farm "$DEVICE" | awk '/Power on Hours:/{print $4}' | head -n 1)
-    
-    echo "$IDENTIFICATION"
 
     # Check if FARM hours are available
     if [ -z "$FARM_HOURS" ]; then
