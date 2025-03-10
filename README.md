@@ -15,12 +15,12 @@ In legitimate new Seagate drives, these values should be nearly identical. A sig
 ## Installation & Usage
 
 ### Command Line Options
-`check.sh [-d device_type] [-f factor] [-v] [--debug] [-ns] <block_device> [block_device2 ...]`
+`check.sh [-d device_type] [-v] [--debug] [-ns] [--basic] <block_device> [block_device2 ...]`
 - `-d device_type`: Specify the device type for smartctl (see smartctl(8) manual for available types)
 - `-v`: Enable verbose mode
 - `--debug`: Enable debug mode to print full SMART data and FARM output for debugging purposes
 - `-ns`: Hide serial numbers in the output (displays "[hidden]" instead)
-- `-f factor`: Specify the factor for head hours comparison (default: 30)
+- `--basic`: only display basic check
 
 ### Docker Usage (Recommended)
 
@@ -32,16 +32,16 @@ In legitimate new Seagate drives, these values should be nearly identical. A sig
 ```bash
 docker pull ghcr.io/gamestailer94/farm-check:latest
 # Check a single drive
-docker run --rm --privileged -v /dev:/dev ghcr.io/gamestailer94/farm-check:latest /dev/sdX
+docker run -t --rm --privileged -v /dev:/dev ghcr.io/gamestailer94/farm-check:latest /dev/sdX
 
 # Check multiple drives
-docker run --rm --privileged -v /dev:/dev ghcr.io/gamestailer94/farm-check:latest /dev/sda /dev/sdb
+docker run -t --rm --privileged -v /dev:/dev ghcr.io/gamestailer94/farm-check:latest /dev/sda /dev/sdb
 
 # Check all drives
-docker run --rm --privileged -v /dev:/dev ghcr.io/gamestailer94/farm-check:latest ALL
+docker run -t --rm --privileged -v /dev:/dev ghcr.io/gamestailer94/farm-check:latest ALL
 
 # Specify device type (see smartctl(8) for available types, might be needed for some NAS Systems)
-docker run --rm --privileged -v /dev:/dev ghcr.io/gamestailer94/farm-check:latest -d sat /dev/sdX
+docker run -t --rm --privileged -v /dev:/dev ghcr.io/gamestailer94/farm-check:latest -d sat /dev/sdX
 ```
 Replace `/dev/sdX` with your drive's device path (e.g., `/dev/sda`).
 
@@ -61,44 +61,65 @@ docker run --rm --privileged -v /dev:/dev farm-check /dev/sdX
 - Root/admin privileges (needed for SMART access)
 
 #### Installation
-Install smartmontools (version ≥ 7.4):
-```bash
-# Ubuntu/Debian
-apt-get update && apt-get install smartmontools
-
-# Fedora
-dnf install smartmontools
-```
+Install or build smartmontools (version ≥ 7.4), see https://github.com/smartmontools/smartmontools
 
 #### Running the Check
 ```bash
 chmod +x check.sh
 # Check a single drive
-sudo ./check.sh /dev/sdX
-
-# Check multiple drives
-sudo ./check.sh /dev/sda /dev/sdb
-
-# Check all drives
-sudo ./check.sh ALL
-
-# Specify device type (see smartctl(8) for available types)
-sudo ./check.sh -d sat /dev/sdX
+sudo /bin/sh ./check.sh /dev/sdX
+# Same parameters as with docker
 ```
-Replace `/dev/sdX` with your drive's device path (e.g., `/dev/sda`).
 
 
 ## Output
 
-The tool outputs:
-- Device: Name of the device being checked
-- SMART: Power-on hours from SMART attributes
-- FARM: Power-on hours from Seagate FARM log (N/A for non-Seagate drives)
-- HEAD: Information about head hours
-- RESULT:
-  - PASS: If the SMART and FARM Values are similar enough
-  - FAIL: If the difference smart and FARM values is greater
-  - SKIP: If the drive is not a Seagate drive (no FARM data available)
+```
+=== Checking device: /dev/sdb ===
+Model Family:   Seagate Exos X16
+Device Model:   ST16000NM001G-2KK103
+Serial Number:  [hidden]
+
+Basic Check:
+RESULT:         PASS
+
+Detailed Values:
+
+Power on hours:
+SMART:          2978
+FARM:           2978
+DIFF:           0
+
+Head Flying Hours:
+SMART:          2780
+FARM:           2921
+DIFF:           141
+WARN:  Head Flying Hours differ by more than 10 hours
+WARN:  This MAY indicate a fraudulent or tampered drive
+WARN:  But can also be due to different measurement methods
+
+Write Power On by Head:
+Min:            1 hrs on Head 7
+Max:            20 hrs on Head 10
+Difference:     19 hrs
+Ratio:          19.00 (Threshold: 30)
+
+Additional Information:
+INF:   These Values might help determine if a drive is genuine or not
+Assembly:       Week 38 of 2023
+Reallocated:    0
+Power Cycles:   5
+Start Stops:    5
+
+Error Rates (Normalized):
+Read:           078
+Seek:           089
+
+Data:
+LBA Size:       512 bytes
+Read:           178529900308 sectors (83 TB)
+Write:          94241496232 sectors (43 TB)
+```
 
 ## How it Works
 
