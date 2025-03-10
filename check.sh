@@ -179,7 +179,7 @@ validate_head_hours() {
     # Validate that the maximum head hours is less than total power on hours
     if [ "$MAX_HEAD_HOURS" -gt "$HEAD_FLYING_HOURS" ]; then
         format_output_column "WARN" "The Highest Head Power On Hours ($MAX_HEAD_HOURS hrs on Head $MAX_HEAD_NUMBER) is greater than the Head Flying Hours ($HEAD_FLYING_HOURS hrs)"
-        format_output_column "WARN" "This may indicate a fraudulent or tampered drive"
+        format_output_column "WARN" "This MAY indicate a fraudulent or tampered drive"
         return 1
     fi
     # Check for substantial difference between min and max hours
@@ -200,28 +200,28 @@ validate_head_hours() {
         # Convert RATIO to floating point
         ACTUAL_RATIO=$(awk "BEGIN {printf \"%.2f\", $RATIO / 1000}")
         
+
+        PREFIX=""
         if [ "$RATIO" -gt "$MAX_RATIO" ]; then
             format_output_column "WARN" "The difference between the Highest and Lowest Head Power On Hours ($DIFF hrs) is rather large"
-            format_output_column "WARN" "This may indicate a fraudulent or tampered drive"
-            format_output_column "WARN" "Min: $MIN_HEAD_HOURS hrs on Head $MIN_HEAD_NUMBER"
-            format_output_column "WARN" "Max: $MAX_HEAD_HOURS hrs on Head $MAX_HEAD_NUMBER"
-            format_output_column "WARN" "Difference: $DIFF hrs"
-            format_output_column "WARN" "Ratio: $ACTUAL_RATIO (Threshold: 30)"
+            format_output_column "WARN" "This MAY indicate a fraudulent or tampered drive"
             format_output_column "WARN" "Run with -v for more details"
-            return 0
+            echo
+            PREFIX="WARN"
         else
             format_output_column "INF" "Difference between Highest and Lowest Head Power On Hours is within acceptable limits"
-            format_output_column "INF" "Min: $MIN_HEAD_HOURS hrs on Head $MIN_HEAD_NUMBER"
-            format_output_column "INF" "Max: $MAX_HEAD_HOURS hrs on Head $MAX_HEAD_NUMBER"
-            format_output_column "INF" "Difference: $DIFF hrs"
-            format_output_column "INF" "Ratio: $ACTUAL_RATIO (Threshold: 30)"
-            return 0
+            echo
+            PREFIX="INF"
         fi
+        format_output_column "$PREFIX" "Min: $MIN_HEAD_HOURS hrs on Head $MIN_HEAD_NUMBER"
+        format_output_column "$PREFIX" "Max: $MAX_HEAD_HOURS hrs on Head $MAX_HEAD_NUMBER"
+        format_output_column "$PREFIX" "Difference: $DIFF hrs"
+        format_output_column "$PREFIX" "Ratio: $ACTUAL_RATIO (Threshold: 30)"
+        return 0
     else
         format_output_column "INF" "Couldn't determine minimum head hours"
         format_output_column "INF" "Either the drive is factory new, or there is only one head"
         echo
-        format_output_column "INF" "Head Flying Hours: $HEAD_FLYING_HOURS hrs"
         format_output_column "INF" "Max: $MAX_HEAD_HOURS hrs on Head $MAX_HEAD_NUMBER"
         return 0
     fi
