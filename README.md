@@ -18,6 +18,7 @@ In legitimate new Seagate drives, these values should be nearly identical. A sig
 - `-d device_type`: Specify the device type for smartctl (see smartctl(8) manual for available types)
 - `-v`: Enable verbose mode
 - `--debug`: Enable debug mode to print full SMART data and FARM output for debugging purposes
+- `-ns`: Hide serial numbers in the output (displays "[hidden]" instead)
 
 ### Docker Usage (Recommended)
 

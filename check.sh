@@ -4,6 +4,7 @@
 DEVICE_TYPE=""
 DEBUG=0
 VERBOSE=0
+HIDE_SERIAL=0
 
 # Parse command line arguments
 while [ $# -gt 0 ]; do
@@ -27,6 +28,10 @@ while [ $# -gt 0 ]; do
             VERBOSE=1
             shift
             ;;
+        -ns)
+            HIDE_SERIAL=1
+            shift
+            ;;
         *)
             break
             ;;
@@ -34,11 +39,12 @@ while [ $# -gt 0 ]; do
 done
 
 if [ $# -eq 0 ]; then
-    echo "Usage: $0 [-d device_type] [-v] [--debug] <block_device> [block_device2 ...]"
+    echo "Usage: $0 [-d device_type] [-v] [--debug] [-ns] <block_device> [block_device2 ...]"
     echo "       Use ALL to try to find all block devices"
     echo "       Use -d to specify device type (see smartctl(8) for available types)"
     echo "       Use -v to display verbose information"
     echo "       Use --debug to print full SMART data and FARM output for debugging"
+    echo "       Use -ns to hide serial numbers in the output"
     exit 1
 fi
 
@@ -185,7 +191,11 @@ check_device() {
     
     format_output_column "Model Family" "$FAMILY"
     format_output_column "Device Model" "$MODEL"
-    format_output_column "Serial Number" "$SERIAL"
+    if [ $HIDE_SERIAL -eq 0 ]; then
+        format_output_column "Serial Number" "$SERIAL"
+    else
+        format_output_column "Serial Number" "[hidden]"
+    fi
     echo
 
     SMART_HOURS=$(echo "$SMART_DATA" | awk '/Power_On_Hours/{print $10}' | head -n 1)
