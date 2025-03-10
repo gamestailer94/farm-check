@@ -199,30 +199,24 @@ validate_head_hours() {
 
         # Convert RATIO to floating point
         ACTUAL_RATIO=$(awk "BEGIN {printf \"%.2f\", $RATIO / 1000}")
-        
 
-        PREFIX=""
+        format_output_column "" "Min: $MIN_HEAD_HOURS hrs on Head $MIN_HEAD_NUMBER"
+        format_output_column "" "Max: $MAX_HEAD_HOURS hrs on Head $MAX_HEAD_NUMBER"
+        format_output_column "" "Difference: $DIFF hrs"
+        format_output_column "" "Ratio: $ACTUAL_RATIO (Threshold: 30)"
+
         if [ "$RATIO" -gt "$MAX_RATIO" ]; then
+            echo
             format_output_column "WARN" "The difference between the Highest and Lowest Head Power On Hours ($DIFF hrs) is rather large"
             format_output_column "WARN" "This MAY indicate a fraudulent or tampered drive"
             format_output_column "WARN" "Run with -v for more details"
-            echo
-            PREFIX="WARN"
-        else
-            format_output_column "INF" "Difference between Highest and Lowest Head Power On Hours is within acceptable limits"
-            echo
-            PREFIX="INF"
         fi
-        format_output_column "$PREFIX" "Min: $MIN_HEAD_HOURS hrs on Head $MIN_HEAD_NUMBER"
-        format_output_column "$PREFIX" "Max: $MAX_HEAD_HOURS hrs on Head $MAX_HEAD_NUMBER"
-        format_output_column "$PREFIX" "Difference: $DIFF hrs"
-        format_output_column "$PREFIX" "Ratio: $ACTUAL_RATIO (Threshold: 30)"
         return 0
     else
         format_output_column "INF" "Couldn't determine minimum head hours"
         format_output_column "INF" "Either the drive is factory new, or there is only one head"
         echo
-        format_output_column "INF" "Max: $MAX_HEAD_HOURS hrs on Head $MAX_HEAD_NUMBER"
+        format_output_column "" "Max: $MAX_HEAD_HOURS hrs on Head $MAX_HEAD_NUMBER"
         return 0
     fi
 }
