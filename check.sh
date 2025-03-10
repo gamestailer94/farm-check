@@ -353,7 +353,10 @@ check_device() {
     format_output_column "Write Power On by Head" ""
     validate_head_hours "$FARM_OUTPUT"
     echo
-    format_output_column "Assembly Date" "$ASSEMBLY_YEAR" "Week $ASSEMBLY_WEEK"
+    format_output_column "Additional Information" ""
+    format_output_column "INF" "These Values might help determine if a drive is tampered or genuine"
+    format_output_column "Assembly" "Week $ASSEMBLY_WEEK of $ASSEMBLY_YEAR"
+
 
     echo
     return $([ $RESULT = "PASS" ])
