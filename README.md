@@ -15,7 +15,7 @@ In legitimate new Seagate drives, these values should be nearly identical. A sig
 ## Installation & Usage
 
 ### Command Line Options
-`check.sh [-d device_type] [-f factor] [-v] [--debug] [-ns] <block_device> [block_device2 ...]`
+`check.sh [-d device_type] [-v] [--debug] [-ns] [--basic] <block_device> [block_device2 ...]`
 - `-d device_type`: Specify the device type for smartctl (see smartctl(8) manual for available types)
 - `-v`: Enable verbose mode
 - `--debug`: Enable debug mode to print full SMART data and FARM output for debugging purposes

@@ -60,7 +60,7 @@ while [ $# -gt 0 ]; do
 done
 
 if [ $# -eq 0 ]; then
-    echo "Usage: $0 [-d device_type] [-f factor] [-v] [--debug] [-ns] <block_device> [block_device2 ...]"
+    echo "Usage: $0 [-d device_type] [-v] [--debug] [-ns] [--basic] <block_device> [block_device2 ...]"
     echo "       Use ALL to try to find all block devices"
     echo "       Use -d to specify device type (see smartctl(8) for available types)"
     echo "       Use --basic to only show basic check result"
