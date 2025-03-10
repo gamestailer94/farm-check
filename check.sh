@@ -307,6 +307,7 @@ check_device() {
         RESULT="PASS"
     fi
 
+    format_output_column "Basic Check" ""
     format_output_column "RESULT" "$RESULT"
     echo
 
@@ -315,21 +316,8 @@ check_device() {
         return $([ $RESULT = "PASS" ])
     fi
 
-    # Extract Head Flying Hours from SMART and FARM data
-    SMART_FLYING_HOURS=$(echo "$SMART_DATA" | awk '/Head_Flying_Hours/{split($10, a, "h"); print a[1]}' | head -n 1)
-    FARM_FLYING_HOURS=$(echo "$FARM_OUTPUT" | awk '/Head Flight Hours:/{print $4}')
-
-    # Calculate absolute difference for head flying hours
-    DIFF_FLYING=$(( SMART_FLYING_HOURS - FARM_FLYING_HOURS ))
-    DIFF_FLYING=${DIFF_FLYING#-}  # Remove negative sign
-
-    # Extract Assembly Date from FARM
-    ASSEMBLY_DATE=$(echo "$FARM_OUTPUT" | awk '/Assembly Date \(YYWW\):/{print $4}')
-    # split to year and week and reverse
-    ASSEMBLY_YEAR=$(echo "$ASSEMBLY_DATE" | cut -c 1-2 | rev)
-    ASSEMBLY_WEEK=$(echo "$ASSEMBLY_DATE" | cut -c 3-4 | rev)
-    # convert to full year
-    ASSEMBLY_YEAR=$(( 2000 + ASSEMBLY_YEAR ))
+    format_output_column "Detailed Values" ""
+    echo
     
     format_output_column "Power on hours" ""
     format_output_column "SMART" "$SMART_HOURS"
@@ -340,6 +328,15 @@ check_device() {
         format_output_column "ERR" "This is very likely a fraudulent or tampered drive"
     fi
     echo
+
+    # Extract Head Flying Hours from SMART and FARM data
+    SMART_FLYING_HOURS=$(echo "$SMART_DATA" | awk '/Head_Flying_Hours/{split($10, a, "h"); print a[1]}' | head -n 1)
+    FARM_FLYING_HOURS=$(echo "$FARM_OUTPUT" | awk '/Head Flight Hours:/{print $4}')
+
+    # Calculate absolute difference for head flying hours
+    DIFF_FLYING=$(( SMART_FLYING_HOURS - FARM_FLYING_HOURS ))
+    DIFF_FLYING=${DIFF_FLYING#-}  # Remove negative sign
+
     format_output_column "Head Flying Hours" ""
     format_output_column "SMART" "$SMART_FLYING_HOURS"
     format_output_column "FARM" "$FARM_FLYING_HOURS"
@@ -354,7 +351,16 @@ check_device() {
     validate_head_hours "$FARM_OUTPUT"
     echo
     format_output_column "Additional Information" ""
-    format_output_column "INF" "These Values might help determine if a drive is tampered or genuine"
+    format_output_column "INF" "These Values might help determine if a drive is genuine or not"
+
+    # Extract Assembly Date from FARM
+    ASSEMBLY_DATE=$(echo "$FARM_OUTPUT" | awk '/Assembly Date \(YYWW\):/{print $4}')
+    # split and reverse
+    ASSEMBLY_YEAR=$(echo "$ASSEMBLY_DATE" | cut -c 1-2 | rev)
+    ASSEMBLY_WEEK=$(echo "$ASSEMBLY_DATE" | cut -c 3-4 | rev)
+    # convert to full year
+    ASSEMBLY_YEAR=$(( 2000 + ASSEMBLY_YEAR ))
+
     format_output_column "Assembly" "Week $ASSEMBLY_WEEK of $ASSEMBLY_YEAR"
 
 
