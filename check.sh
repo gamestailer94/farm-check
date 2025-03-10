@@ -362,7 +362,27 @@ check_device() {
     ASSEMBLY_YEAR=$(( 2000 + ASSEMBLY_YEAR ))
 
     format_output_column "Assembly" "Week $ASSEMBLY_WEEK of $ASSEMBLY_YEAR"
+    format_output_column "Reallocated" $(echo "$FARM_OUTPUT" | awk '/Number of Reallocated Sectors:/{print $5}')
+    POWER_CYCLES=$(echo "$SMART_DATA" | awk '/Power_Cycle_Count/{print $10}')
+    format_output_column "Power Cycles" "$POWER_CYCLES"
+    START_STOP_COUNT=$(echo "$SMART_DATA" | awk '/Start_Stop_Count/{print $10}')
+    format_output_column "Start Stops" "$START_STOP_COUNT"
 
+    echo 
+    format_output_column "Error Rates (Normalized)" ""
+    format_output_column "Read" $(echo "$SMART_DATA" | awk '/Raw_Read_Error_Rate/{print $4}')
+    format_output_column "Seek" $(echo "$SMART_DATA" | awk '/Seek_Error_Rate/{print $4}')
+
+    echo
+    format_output_column "Data" ""
+    LOGICAL_SECTOR_SIZE=$(echo "$FARM_OUTPUT" | awk '/Logical Sector Size:/{print $4}')
+    LBA_READ=$(echo "$FARM_OUTPUT" | awk '/Logical Sectors Read:/{print $4}')
+    LBA_WRITE=$(echo "$FARM_OUTPUT" | awk '/Logical Sectors Written:/{print $4}')
+    TB_READ=$(( LBA_READ * LOGICAL_SECTOR_SIZE / 1024 / 1024 / 1024 / 1024))
+    TB_WRITE=$(( LBA_WRITE * LOGICAL_SECTOR_SIZE / 1024 / 1024 / 1024 / 1024))
+    format_output_column "LBA Size" "$LOGICAL_SECTOR_SIZE bytes"
+    format_output_column "Read" "$LBA_READ sectors ($TB_READ TB)"
+    format_output_column "Write" "$LBA_WRITE sectors ($TB_WRITE TB)"
 
     echo
     return $([ $RESULT = "PASS" ])
