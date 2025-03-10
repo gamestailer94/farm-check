@@ -5,6 +5,7 @@ DEVICE_TYPE=""
 DEBUG=0
 VERBOSE=0
 HIDE_SERIAL=0
+FACTOR=30
 
 # Parse command line arguments
 while [ $# -gt 0 ]; do
@@ -16,6 +17,20 @@ while [ $# -gt 0 ]; do
                 exit 1
             fi
             DEVICE_TYPE="$1"
+            shift
+            ;;
+        -f)
+            shift
+            if [ $# -eq 0 ]; then
+                echo "Error: -f requires a parameter"
+                exit 1
+            fi
+            FACTOR="$1"
+            # Validate that FACTOR is a valid number
+            if ! echo "$FACTOR" | grep -q '^[0-9]*\.[0-9]\+$\|^[0-9]\+$'; then
+                echo "Error: Factor must be a valid number"
+                exit 1
+            fi
             shift
             ;;
         --debug)
@@ -39,9 +54,10 @@ while [ $# -gt 0 ]; do
 done
 
 if [ $# -eq 0 ]; then
-    echo "Usage: $0 [-d device_type] [-v] [--debug] [-ns] <block_device> [block_device2 ...]"
+    echo "Usage: $0 [-d device_type] [-f factor] [-v] [--debug] [-ns] <block_device> [block_device2 ...]"
     echo "       Use ALL to try to find all block devices"
     echo "       Use -d to specify device type (see smartctl(8) for available types)"
+    echo "       Use -f to specify the factor for head hours comparison (default: 30)"
     echo "       Use -v to display verbose information"
     echo "       Use --debug to print full SMART data and FARM output for debugging"
     echo "       Use -ns to hide serial numbers in the output"
@@ -88,9 +104,11 @@ validate_head_hours() {
         return 0
     fi
     
-    # Initialize variables for tracking the maximum value
+    # Initialize variables for tracking the maximum and minimum values
     MAX_HEAD_HOURS=0
     MAX_HEAD_NUMBER=""
+    MIN_HEAD_HOURS=999999999  # Start with a very high number
+    MIN_HEAD_NUMBER=""
     
     # Create a temporary file to store head data
     TEMP_HEAD_DATA=$(mktemp)
@@ -114,6 +132,12 @@ validate_head_hours() {
             MAX_HEAD_NUMBER=$HEAD_NUMBER
         fi
         
+        # Check if this is the minimum value so far (only if hours > 0)
+        if [ "$HOURS_VALUE" -gt 0 ] && [ "$HOURS_VALUE" -lt "$MIN_HEAD_HOURS" ]; then
+            MIN_HEAD_HOURS=$HOURS_VALUE
+            MIN_HEAD_NUMBER=$HEAD_NUMBER
+        fi
+        
         # Debug or verbose output if requested
         if [ $VERBOSE -eq 1 ]; then
             format_output_column "Head $HEAD_NUMBER" "$SECONDS_VALUE seconds = $HOURS_VALUE hours"
@@ -130,8 +154,37 @@ validate_head_hours() {
         format_output_column "HEAD" "FAIL (Head $MAX_HEAD_NUMBER: $MAX_HEAD_HOURS hrs > Total: $HEAD_FLYING_HOURS hrs)"
         return 1
     else
-        format_output_column "HEAD" "PASS (Max: $MAX_HEAD_HOURS hrs)"
-        return 0
+        # Check for substantial difference between min and max hours based on factor
+        # Only if we have valid min and max values
+        if [ "$MIN_HEAD_HOURS" -ne 999999999 ] && [ "$MAX_HEAD_HOURS" -gt 0 ]; then
+            # Calculate the difference
+            # We want to check if: (max - min) / min > FACTOR
+            # To avoid floating point math in shell, we'll use a scaled integer approach
+            # Multiply both sides by 1000 to handle decimal factors
+            # (max - min) * 1000 / min > FACTOR * 1000
+            DIFF=$(( MAX_HEAD_HOURS - MIN_HEAD_HOURS ))
+            
+            # Convert FACTOR to integer (multiply by 1000)
+            # Use awk for floating point multiplication
+            FACTOR_INT=$(awk "BEGIN {printf \"%.0f\", $FACTOR * 1000}")
+            
+            # Calculate (max - min) * 1000 / min
+            RATIO=$(awk "BEGIN {printf \"%.0f\", $DIFF * 1000 / $MIN_HEAD_HOURS}")
+
+            # Convert RATIO to floating point
+            ACTUAL_RATIO=$(awk "BEGIN {printf \"%.2f\", $RATIO / 1000}")
+            
+            if [ "$RATIO" -gt "$FACTOR_INT" ]; then
+                format_output_column "HEAD" "WARN (Max: $MAX_HEAD_HOURS hrs on Head $MAX_HEAD_NUMBER, Min: $MIN_HEAD_HOURS hrs on Head $MIN_HEAD_NUMBER, Factor Limit: $FACTOR, Actual Factor: $ACTUAL_RATIO)"
+                return 0
+            else
+                format_output_column "HEAD" "PASS (Max: $MAX_HEAD_HOURS hrs, Min: $MIN_HEAD_HOURS hrs, Factor Limit: $FACTOR, Actual Factor: $ACTUAL_RATIO)"
+                return 0
+            fi
+        else
+            format_output_column "HEAD" "PASS (Max: $MAX_HEAD_HOURS hrs, Min: $MIN_HEAD_HOURS hrs)"
+            return 0
+        fi
     fi
 }
 
