@@ -200,10 +200,10 @@ validate_head_hours() {
         # Convert RATIO to floating point
         ACTUAL_RATIO=$(awk "BEGIN {printf \"%.2f\", $RATIO / 1000}")
 
-        format_output_column "" "Min: $MIN_HEAD_HOURS hrs on Head $MIN_HEAD_NUMBER"
-        format_output_column "" "Max: $MAX_HEAD_HOURS hrs on Head $MAX_HEAD_NUMBER"
-        format_output_column "" "Difference: $DIFF hrs"
-        format_output_column "" "Ratio: $ACTUAL_RATIO (Threshold: 30)"
+        format_output_column "Min" "$MIN_HEAD_HOURS hrs on Head $MIN_HEAD_NUMBER"
+        format_output_column "Max" "$MAX_HEAD_HOURS hrs on Head $MAX_HEAD_NUMBER"
+        format_output_column "Difference" "$DIFF hrs"
+        format_output_column "Ratio" "$ACTUAL_RATIO (Threshold: 30)"
 
         if [ "$RATIO" -gt "$MAX_RATIO" ]; then
             echo
@@ -216,7 +216,7 @@ validate_head_hours() {
         format_output_column "INF" "Couldn't determine minimum head hours"
         format_output_column "INF" "Either the drive is factory new, or there is only one head"
         echo
-        format_output_column "" "Max: $MAX_HEAD_HOURS hrs on Head $MAX_HEAD_NUMBER"
+        format_output_column "Max" "$MAX_HEAD_HOURS hrs on Head $MAX_HEAD_NUMBER"
         return 0
     fi
 }
