@@ -5,7 +5,7 @@ DEVICE_TYPE=""
 DEBUG=0
 VERBOSE=0
 HIDE_SERIAL=0
-FACTOR=30
+BASIC_ONLY=0
 
 # Parse command line arguments
 while [ $# -gt 0 ]; do
@@ -19,18 +19,8 @@ while [ $# -gt 0 ]; do
             DEVICE_TYPE="$1"
             shift
             ;;
-        -f)
-            shift
-            if [ $# -eq 0 ]; then
-                echo "Error: -f requires a parameter"
-                exit 1
-            fi
-            FACTOR="$1"
-            # Validate that FACTOR is a valid number
-            if ! echo "$FACTOR" | grep -q '^[0-9]*\.[0-9]\+$\|^[0-9]\+$'; then
-                echo "Error: Factor must be a valid number"
-                exit 1
-            fi
+        --basic)
+            BASIC_ONLY=1
             shift
             ;;
         --debug)
@@ -57,7 +47,7 @@ if [ $# -eq 0 ]; then
     echo "Usage: $0 [-d device_type] [-f factor] [-v] [--debug] [-ns] <block_device> [block_device2 ...]"
     echo "       Use ALL to try to find all block devices"
     echo "       Use -d to specify device type (see smartctl(8) for available types)"
-    echo "       Use -f to specify the factor for head hours comparison (default: 30)"
+    echo "       Use --basic to only show basic check result"
     echo "       Use -v to display verbose information"
     echo "       Use --debug to print full SMART data and FARM output for debugging"
     echo "       Use -ns to hide serial numbers in the output"
@@ -77,13 +67,18 @@ if [ "$(printf '%s\n' "7.4" "$SMARTCTL_VERSION" | sort -V | head -n1)" != "7.4" 
 fi
 
 format_output_column() {
-    local name=$1
-    local value=$2
-    # add : to the name if it is not empty
-    if [ -n "$name" ]; then
-        name="$name:"
+    local value1=$1
+    local value2=$2
+    local value3=$3
+    # add : to the value1 if it is not empty
+    if [ -n "$value1" ]; then
+        value1="$value1:"
     fi
-    printf "%-15s %s\n" "$name" "$value"
+    if [ -n "$value3" ]; then
+        printf "%-15s %-15s %s\n" "$value1" "$value2" "$value3"
+    else
+        printf "%-15s %s\n" "$value1" "$value2"
+    fi
 }
 
 
@@ -138,9 +133,8 @@ validate_head_hours() {
             MIN_HEAD_NUMBER=$HEAD_NUMBER
         fi
         
-        # Debug or verbose output if requested
         if [ $VERBOSE -eq 1 ]; then
-            format_output_column "Head $HEAD_NUMBER" "$SECONDS_VALUE seconds = $HOURS_VALUE hours"
+            format_output_column "Head $HEAD_NUMBER" "$SECONDS_VALUE seconds" "~$HOURS_VALUE hours"
         fi
     done < "$TEMP_HEAD_DATA"
     
@@ -151,40 +145,51 @@ validate_head_hours() {
     
     # Validate that the maximum head hours is less than total power on hours
     if [ "$MAX_HEAD_HOURS" -gt "$HEAD_FLYING_HOURS" ]; then
-        format_output_column "HEAD" "FAIL (Head $MAX_HEAD_NUMBER: $MAX_HEAD_HOURS hrs > Total: $HEAD_FLYING_HOURS hrs)"
+        format_output_column "WARN" "The Highest Head Power On Hours ($MAX_HEAD_HOURS hrs on Head $MAX_HEAD_NUMBER) is greater than the Head Flying Hours ($HEAD_FLYING_HOURS hrs)"
+        format_output_column "WARN" "This may indicate a fraudulent or tampered drive"
         return 1
-    else
-        # Check for substantial difference between min and max hours based on factor
-        # Only if we have valid min and max values
-        if [ "$MIN_HEAD_HOURS" -ne 999999999 ] && [ "$MAX_HEAD_HOURS" -gt 0 ]; then
-            # Calculate the difference
-            # We want to check if: (max - min) / min > FACTOR
-            # To avoid floating point math in shell, we'll use a scaled integer approach
-            # Multiply both sides by 1000 to handle decimal factors
-            # (max - min) * 1000 / min > FACTOR * 1000
-            DIFF=$(( MAX_HEAD_HOURS - MIN_HEAD_HOURS ))
-            
-            # Convert FACTOR to integer (multiply by 1000)
-            # Use awk for floating point multiplication
-            FACTOR_INT=$(awk "BEGIN {printf \"%.0f\", $FACTOR * 1000}")
-            
-            # Calculate (max - min) * 1000 / min
-            RATIO=$(awk "BEGIN {printf \"%.0f\", $DIFF * 1000 / $MIN_HEAD_HOURS}")
+    fi
+    # Check for substantial difference between min and max hours
+    # Only if we have valid min and max values
+    if [ "$MIN_HEAD_HOURS" -ne 999999999 ] && [ "$MAX_HEAD_HOURS" -gt 0 ]; then
+        # Calculate the difference
+        # We want to check if: (max - min) / min > MAX_RATIO
+        # To avoid floating point math in shell, we'll use a scaled integer approach
+        # Multiply both sides by 1000 to handle decimal factors
+        # (max - min) * 1000 / min > MAX_RATIO * 1000
+        DIFF=$(( MAX_HEAD_HOURS - MIN_HEAD_HOURS ))
 
-            # Convert RATIO to floating point
-            ACTUAL_RATIO=$(awk "BEGIN {printf \"%.2f\", $RATIO / 1000}")
-            
-            if [ "$RATIO" -gt "$FACTOR_INT" ]; then
-                format_output_column "HEAD" "WARN (Max: $MAX_HEAD_HOURS hrs on Head $MAX_HEAD_NUMBER, Min: $MIN_HEAD_HOURS hrs on Head $MIN_HEAD_NUMBER, Factor Limit: $FACTOR, Actual Factor: $ACTUAL_RATIO)"
-                return 0
-            else
-                format_output_column "HEAD" "PASS (Max: $MAX_HEAD_HOURS hrs, Min: $MIN_HEAD_HOURS hrs, Factor Limit: $FACTOR, Actual Factor: $ACTUAL_RATIO)"
-                return 0
-            fi
+        MAX_RATIO=30000 # 30.0
+        
+        # Calculate (max - min) * 1000 / min
+        RATIO=$(awk "BEGIN {printf \"%.0f\", $DIFF * 1000 / $MIN_HEAD_HOURS}")
+
+        # Convert RATIO to floating point
+        ACTUAL_RATIO=$(awk "BEGIN {printf \"%.2f\", $RATIO / 1000}")
+        
+        if [ "$RATIO" -gt "$MAX_RATIO" ]; then
+            format_output_column "WARN" "The difference between the Highest and Lowest Head Power On Hours ($DIFF hrs) is rather large"
+            format_output_column "WARN" "This may indicate a fraudulent or tampered drive"
+            format_output_column "WARN" "Min: $MIN_HEAD_HOURS hrs on Head $MIN_HEAD_NUMBER"
+            format_output_column "WARN" "Max: $MAX_HEAD_HOURS hrs on Head $MAX_HEAD_NUMBER"
+            format_output_column "WARN" "Difference: $DIFF hrs"
+            format_output_column "WARN" "Ratio: $ACTUAL_RATIO (Threshold: 30)"
+            format_output_column "WARN" "Run with -v for more details"
+            return 0
         else
-            format_output_column "HEAD" "PASS (Max: $MAX_HEAD_HOURS hrs, Min: $MIN_HEAD_HOURS hrs)"
+            format_output_column "" "Difference between Highest and Lowest Head Power On Hours is within acceptable limits"
+            format_output_column "" "Min: $MIN_HEAD_HOURS hrs on Head $MIN_HEAD_NUMBER"
+            format_output_column "" "Max: $MAX_HEAD_HOURS hrs on Head $MAX_HEAD_NUMBER"
+            format_output_column "" "Difference: $DIFF hrs"
+            format_output_column "" "Ratio: $ACTUAL_RATIO (Threshold: 30)"
             return 0
         fi
+    else
+        format_output_column "INF" "Couldn't determine minimum head hours"
+        format_output_column "INF" "Either the drive is factory new, or there is only one head"
+        format_output_column "" "Head Flying Hours: $HEAD_FLYING_HOURS hrs"
+        format_output_column "" "Max: $MAX_HEAD_HOURS hrs on Head $MAX_HEAD_NUMBER"
+        return 0
     fi
 }
 
@@ -229,26 +234,25 @@ check_device() {
     # Extract information from the stored SMART data using awk to get only the values
     FAMILY=$(echo "$SMART_DATA" | awk -F':' '/Model Family/{gsub(/^[ \t]+/, "", $2); print $2}')
     if [ -z "$FAMILY" ]; then
-        FAMILY="N/A (smartmontools does not know this device or device does not report Model Family)"
+        FAMILY="N/A (device does not report Model Family)"
     fi
     
     MODEL=$(echo "$SMART_DATA" | awk -F':' '/Device Model/{gsub(/^[ \t]+/, "", $2); print $2}')
     if [ -z "$MODEL" ]; then
-        MODEL="N/A (smartmontools does not know this device or device does not report Device Model)"
+        MODEL="N/A (device does not report Device Model)"
     fi
     
     SERIAL=$(echo "$SMART_DATA" | awk -F':' '/Serial Number/{gsub(/^[ \t]+/, "", $2); print $2}')
     if [ -z "$SERIAL" ]; then
-        SERIAL="N/A (smartmontools does not know this device or device does not report Serial Number)"
+        SERIAL="N/A (device does not report Serial Number)"
     fi
     
     format_output_column "Model Family" "$FAMILY"
     format_output_column "Device Model" "$MODEL"
-    if [ $HIDE_SERIAL -eq 0 ]; then
-        format_output_column "Serial Number" "$SERIAL"
-    else
-        format_output_column "Serial Number" "[hidden]"
+    if [ $HIDE_SERIAL -eq 1 ]; then
+        SERIAL="[hidden]"
     fi
+    format_output_column "Serial Number" "$SERIAL"
     echo
 
     # Extract Power On Hours from SMART and FARM data
@@ -262,20 +266,9 @@ check_device() {
 
     # Check if FARM hours are available
     if [ -z "$FARM_HOURS" ]; then
-        format_output_column "FARM data not available - likely not a Seagate drive" ""
-        format_output_column "Power on hours" ""
-        format_output_column "SMART" "$SMART_HOURS"
-        format_output_column "FARM" "N/A"
-        echo
-        format_output_column "Head Flying Hours" ""
-        format_output_column "SMART" "$SMART_FLYING_HOURS"
-        format_output_column "FARM" "N/A"
-        echo
-        format_output_column "Write Power On by Head" ""
-        echo "N/A (FARM data not available)"
-        echo 
+        format_output_column "INF" "FARM data not available - likely not a Seagate drive"
+
         format_output_column "RESULT" "SKIP"
-        
         echo
         echo
         return
@@ -283,49 +276,40 @@ check_device() {
     
     # Calculate absolute difference for power on hours
     DIFF=$(( SMART_HOURS - FARM_HOURS ))
-    ABS_DIFF=${DIFF#-}  # Remove negative sign
+    DIFF=${DIFF#-}  # Remove negative sign
 
     # Calculate absolute difference for head flying hours
     DIFF_FLYING=$(( SMART_FLYING_HOURS - FARM_FLYING_HOURS ))
-    ABS_DIFF_FLYING=${DIFF_FLYING#-}  # Remove negative sign
+    DIFF_FLYING=${DIFF_FLYING#-}  # Remove negative sign
 
     # Determine power on hours difference result 
-    HOURS_RESULT="FAIL"
-    if [ $ABS_DIFF -le 1 ]; then
-        HOURS_RESULT="PASS"
+    RESULT="FAIL"
+    if [ $DIFF -le 1 ]; then
+        RESULT="PASS"
     fi
 
-    # Determine head flying hours difference result
-    FLYING_HOURS_RESULT="FAIL"
-    if [ $ABS_DIFF_FLYING -le 1 ]; then
-        FLYING_HOURS_RESULT="PASS"
-    fi
+    format_output_column "RESULT" "$RESULT"
+    echo
 
-    # Validate head hours
-    HEAD_RESULT=$(validate_head_hours "$FARM_OUTPUT")
-    HEAD_STATUS=$?
-    
-    # Determine overall result
-    RESULT="PASS"
-    if [ "$HOURS_RESULT" = "FAIL" ] || [ $HEAD_STATUS -ne 0 ]; then
-        RESULT="FAIL"
+    if [ $BASIC_ONLY -eq 1 ]; then
+        echo
+        return $([ $RESULT = "PASS" ])
     fi
     
     format_output_column "Power on hours" ""
     format_output_column "SMART" "$SMART_HOURS"
     format_output_column "FARM" "$FARM_HOURS"
+    format_output_column "DIFF" "$DIFF"
     echo
     format_output_column "Head Flying Hours" ""
     format_output_column "SMART" "$SMART_FLYING_HOURS"
     format_output_column "FARM" "$FARM_FLYING_HOURS"
+    format_output_column "DIFF" "$DIFF_FLYING"
     echo
     format_output_column "Write Power On by Head" ""
-    echo "$HEAD_RESULT"
-    echo 
-    format_output_column "RESULT" "$RESULT"
-    
+    validate_head_hours "$FARM_OUTPUT"
     echo
-    echo
+    return $([ $RESULT = "PASS" ])
 }
 
 # Handle ALL case
