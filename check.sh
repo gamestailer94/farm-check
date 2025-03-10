@@ -198,30 +198,56 @@ check_device() {
     fi
     echo
 
+    # Extract Power On Hours from SMART and FARM data
+
     SMART_HOURS=$(echo "$SMART_DATA" | awk '/Power_On_Hours/{print $10}' | head -n 1)
     FARM_HOURS=$(echo "$FARM_OUTPUT" | awk '/Power on Hours:/{print $4}' | head -n 1)
 
+    # Extract Head Flying Hours from SMART and FARM data
+    SMART_FLYING_HOURS=$(echo "$SMART_DATA" | awk '/Head_Flying_Hours/{split($10, a, "h"); print a[1]}' | head -n 1)
+    FARM_FLYING_HOURS=$(echo "$FARM_OUTPUT" | awk '/Head Flight Hours:/{print $4}')
+
     # Check if FARM hours are available
     if [ -z "$FARM_HOURS" ]; then
-        format_output_column "" "FARM data not available - likely not a Seagate drive"
+        format_output_column "FARM data not available - likely not a Seagate drive" ""
+        format_output_column "Power on hours" ""
         format_output_column "SMART" "$SMART_HOURS"
         format_output_column "FARM" "N/A"
-        format_output_column "HEAD" "N/A"
+        echo
+        format_output_column "Head Flying Hours" ""
+        format_output_column "SMART" "$SMART_FLYING_HOURS"
+        format_output_column "FARM" "N/A"
+        echo
+        format_output_column "Write Power On by Head" ""
+        echo "N/A (FARM data not available)"
+        echo 
         format_output_column "RESULT" "SKIP"
+        
+        echo
         echo
         return
     fi
     
-    # Calculate absolute difference
+    # Calculate absolute difference for power on hours
     DIFF=$(( SMART_HOURS - FARM_HOURS ))
     ABS_DIFF=${DIFF#-}  # Remove negative sign
-    
-    # Determine hours difference result
+
+    # Calculate absolute difference for head flying hours
+    DIFF_FLYING=$(( SMART_FLYING_HOURS - FARM_FLYING_HOURS ))
+    ABS_DIFF_FLYING=${DIFF_FLYING#-}  # Remove negative sign
+
+    # Determine power on hours difference result 
     HOURS_RESULT="FAIL"
     if [ $ABS_DIFF -le 1 ]; then
         HOURS_RESULT="PASS"
     fi
-    
+
+    # Determine head flying hours difference result
+    FLYING_HOURS_RESULT="FAIL"
+    if [ $ABS_DIFF_FLYING -le 1 ]; then
+        FLYING_HOURS_RESULT="PASS"
+    fi
+
     # Validate head hours
     HEAD_RESULT=$(validate_head_hours "$FARM_OUTPUT")
     HEAD_STATUS=$?
@@ -232,11 +258,20 @@ check_device() {
         RESULT="FAIL"
     fi
     
+    format_output_column "Power on hours" ""
     format_output_column "SMART" "$SMART_HOURS"
     format_output_column "FARM" "$FARM_HOURS"
+    echo
+    format_output_column "Head Flying Hours" ""
+    format_output_column "SMART" "$SMART_FLYING_HOURS"
+    format_output_column "FARM" "$FARM_FLYING_HOURS"
+    echo
+    format_output_column "Write Power On by Head" ""
     echo "$HEAD_RESULT"
+    echo 
     format_output_column "RESULT" "$RESULT"
     
+    echo
     echo
 }
 
