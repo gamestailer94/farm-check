@@ -8,16 +8,19 @@ HIDE_SERIAL=0
 BASIC_ONLY=0
 
 # Colors
-COLOR_SUPPORT=0
-RED='\033[0;31m'
-GREEN='\033[0;32m'
-YELLOW='\033[0;33m'
-BLUE='\033[0;34m'
-NC='\033[0m' # No Color
+RED=""
+GREEN=""
+YELLOW=""
+BLUE=""
+NC=""
 
-# Check if terminal supports colors
+# set colors if terminal supports it
 if [ -t 1 ]; then
-    COLOR_SUPPORT=1
+    RED="\e[31m"
+    GREEN="\e[32m"
+    YELLOW="\e[33m"
+    BLUE="\e[34m"
+    NC="\e[0m" # No Color
 fi
 
 # Parse command line arguments
@@ -92,14 +95,14 @@ format_output_column() {
     # if value1 is RESULT, colorize the value2
     if [ "$value1" = "RESULT:" ]; then
         if [ "$value2" = "PASS" ]; then
-            value2="${GREEN}$value2${NC}"
+            value2=$(echo -e "${GREEN}$value2${NC}")
         elif [ "$value2" = "FAIL" ]; then
-            value2="${RED}$value2${NC}"
+            value2=$(echo -e "${RED}$value2${NC}")
         fi
     elif [ "$value1" = "WARN" ]; then
-        value2="${YELLOW}$value2${NC}"
+        value2=$(echo -e "${YELLOW}$value2${NC}")
     elif [ "$value1" = "INF" ]; then
-        value2="${BLUE}$value2${NC}"
+        value2=$(echo -e "${BLUE}$value2${NC}")
     fi
 
     if [ -n "$value3" ]; then
