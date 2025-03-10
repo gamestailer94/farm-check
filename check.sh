@@ -74,7 +74,6 @@ format_output_column() {
 # Function to validate head hours
 validate_head_hours() {
     local FARM_OUTPUT="$1"
-    local SMART_HOURS="$2"
     
     # Extract Write Power On values by Head
     WRITE_POWER_ON_LINES=$(echo "$FARM_OUTPUT" | grep "Write Power On (hrs) by Head")
@@ -124,10 +123,12 @@ validate_head_hours() {
     
     # Clean up temporary file
     rm -f "$TEMP_HEAD_DATA"
+
+    HEAD_FLYING_HOURS=$(echo "$FARM_OUTPUT" | awk '/Head Flying Hours/{print $4}')
     
     # Validate that the maximum head hours is less than total power on hours
-    if [ "$MAX_HEAD_HOURS" -gt "$SMART_HOURS" ]; then
-        format_output_column "HEAD" "FAIL (Head $MAX_HEAD_NUMBER: $MAX_HEAD_HOURS hrs > Total: $SMART_HOURS hrs)"
+    if [ "$MAX_HEAD_HOURS" -gt "$HEAD_FLYING_HOURS" ]; then
+        format_output_column "HEAD" "FAIL (Head $MAX_HEAD_NUMBER: $MAX_HEAD_HOURS hrs > Total: $HEAD_FLYING_HOURS hrs)"
         return 1
     else
         format_output_column "HEAD" "PASS (Max: $MAX_HEAD_HOURS hrs)"
@@ -223,7 +224,7 @@ check_device() {
     fi
     
     # Validate head hours
-    HEAD_RESULT=$(validate_head_hours "$FARM_OUTPUT" "$SMART_HOURS")
+    HEAD_RESULT=$(validate_head_hours "$FARM_OUTPUT")
     HEAD_STATUS=$?
     
     # Determine overall result
