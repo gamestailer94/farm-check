@@ -312,6 +312,8 @@ check_device() {
     return $([ $RESULT = "PASS" ])
 }
 
+HAS_FAILED=0
+
 # Handle ALL case
 if [ "$1" = "ALL" ]; then
     echo "Trying to detect all block devices..."
@@ -324,6 +326,9 @@ if [ "$1" = "ALL" ]; then
         # Skip partition devices (e.g., /dev/sda1)
         if ! echo "$device" | grep -q '[0-9]$'; then
             check_device "$device"
+            if [ $? -ne 0 ]; then
+                HAS_FAILED=1
+            fi
         fi
     done
 
@@ -332,6 +337,9 @@ if [ "$1" = "ALL" ]; then
         # Skip partition devices (e.g., /dev/sata1p1)
         if echo "$device" | grep -q -E 'sata[0-9][0-9]?[0-9]?$'; then
             check_device "$device"
+            if [ $? -ne 0 ]; then
+                HAS_FAILED=1
+            fi
         fi
     done
 
@@ -340,11 +348,21 @@ if [ "$1" = "ALL" ]; then
         # Skip partition devices (e.g., /dev/sas1p1)
         if echo "$device" | grep -q -E 'sas[0-9][0-9]?[0-9]?$'; then
             check_device "$device"
+            if [ $? -ne 0 ]; then
+                HAS_FAILED=1
+            fi
         fi
     done
 else
     # Handle explicit device arguments
     for device in "$@"; do
         check_device "$device"
+        if [ $? -ne 0 ]; then
+            HAS_FAILED=1
+        fi
     done
+fi
+
+if [ $HAS_FAILED -eq 1 ]; then
+    exit 2
 fi
