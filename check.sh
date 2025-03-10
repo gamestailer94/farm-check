@@ -76,7 +76,12 @@ validate_head_hours() {
     local FARM_OUTPUT="$1"
     
     # Extract Write Power On values by Head
-    WRITE_POWER_ON_LINES=$(echo "$FARM_OUTPUT" | grep "Write Power On (hrs) by Head")
+    # Format 1 smartctl >7.4
+    WRITE_POWER_ON_LINES=$(echo "$FARM_OUTPUT" | grep "Write Power On (sec) by Head")
+    # Format 2 smartctl 7.4
+    if [ -z "$WRITE_POWER_ON_LINES" ]; then
+        WRITE_POWER_ON_LINES=$(echo "$FARM_OUTPUT" | grep "Write Power On (hrs) by Head")
+    fi
     if [ -z "$WRITE_POWER_ON_LINES" ]; then
         # No head data found
         format_output_column "HEAD" "N/A (No head data found)"
@@ -101,13 +106,7 @@ validate_head_hours() {
         HEAD_NUMBER=${HEAD_NUMBER%:}
         
         # Convert seconds to hours (integer division)
-        # Only divide by 3600 if smartctl version is exactly 7.4
-        # Newer versions don't have the display problem
-        if [ "$SMARTCTL_VERSION" = "7.4" ]; then
-            HOURS_VALUE=$(( SECONDS_VALUE / 3600 ))
-        else
-            HOURS_VALUE=$SECONDS_VALUE
-        fi
+        HOURS_VALUE=$(( SECONDS_VALUE / 3600 ))
         
         # Check if this is the maximum value so far
         if [ "$HOURS_VALUE" -gt "$MAX_HEAD_HOURS" ]; then
