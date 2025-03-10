@@ -251,11 +251,10 @@ check_device() {
     
     # Print debug information if requested
     if [ $DEBUG -eq 1 ]; then
-        echo "=== DEBUG: Full SMART data for $DEVICE ==="
-        echo "$SMART_DATA"
-        echo
-        echo "=== DEBUG: Full FARM output for $DEVICE ==="
-        echo "$FARM_OUTPUT"
+        DEBUG_OUTPUT=$($SMARTCTL_CMD -x -l farm "$DEVICE")
+        echo "=== DEBUG: Full SMART and FARM data for $DEVICE ==="
+        echo "$DEBUG_OUTPUT"
+        echo "=== END DEBUG ==="
         echo
     fi
     
