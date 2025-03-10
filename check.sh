@@ -7,6 +7,19 @@ VERBOSE=0
 HIDE_SERIAL=0
 BASIC_ONLY=0
 
+# Colors
+COLOR_SUPPORT=0
+RED='\033[0;31m'
+GREEN='\033[0;32m'
+YELLOW='\033[0;33m'
+BLUE='\033[0;34m'
+NC='\033[0m' # No Color
+
+# Check if terminal supports colors
+if [ -t 1 ]; then
+    COLOR_SUPPORT=1
+fi
+
 # Parse command line arguments
 while [ $# -gt 0 ]; do
     case "$1" in
@@ -70,10 +83,25 @@ format_output_column() {
     local value1=$1
     local value2=$2
     local value3=$3
+
     # add : to the value1 if it is not empty
     if [ -n "$value1" ]; then
         value1="$value1:"
     fi
+
+    # if value1 is RESULT, colorize the value2
+    if [ "$value1" = "RESULT:" ]; then
+        if [ "$value2" = "PASS" ]; then
+            value2="${GREEN}$value2${NC}"
+        elif [ "$value2" = "FAIL" ]; then
+            value2="${RED}$value2${NC}"
+        fi
+    elif [ "$value1" = "WARN" ]; then
+        value2="${YELLOW}$value2${NC}"
+    elif [ "$value1" = "INF" ]; then
+        value2="${BLUE}$value2${NC}"
+    fi
+
     if [ -n "$value3" ]; then
         printf "%-15s %-15s %s\n" "$value1" "$value2" "$value3"
     else
@@ -177,18 +205,19 @@ validate_head_hours() {
             format_output_column "WARN" "Run with -v for more details"
             return 0
         else
-            format_output_column "" "Difference between Highest and Lowest Head Power On Hours is within acceptable limits"
-            format_output_column "" "Min: $MIN_HEAD_HOURS hrs on Head $MIN_HEAD_NUMBER"
-            format_output_column "" "Max: $MAX_HEAD_HOURS hrs on Head $MAX_HEAD_NUMBER"
-            format_output_column "" "Difference: $DIFF hrs"
-            format_output_column "" "Ratio: $ACTUAL_RATIO (Threshold: 30)"
+            format_output_column "INF" "Difference between Highest and Lowest Head Power On Hours is within acceptable limits"
+            format_output_column "INF" "Min: $MIN_HEAD_HOURS hrs on Head $MIN_HEAD_NUMBER"
+            format_output_column "INF" "Max: $MAX_HEAD_HOURS hrs on Head $MAX_HEAD_NUMBER"
+            format_output_column "INF" "Difference: $DIFF hrs"
+            format_output_column "INF" "Ratio: $ACTUAL_RATIO (Threshold: 30)"
             return 0
         fi
     else
         format_output_column "INF" "Couldn't determine minimum head hours"
         format_output_column "INF" "Either the drive is factory new, or there is only one head"
-        format_output_column "" "Head Flying Hours: $HEAD_FLYING_HOURS hrs"
-        format_output_column "" "Max: $MAX_HEAD_HOURS hrs on Head $MAX_HEAD_NUMBER"
+        echo
+        format_output_column "INF" "Head Flying Hours: $HEAD_FLYING_HOURS hrs"
+        format_output_column "INF" "Max: $MAX_HEAD_HOURS hrs on Head $MAX_HEAD_NUMBER"
         return 0
     fi
 }
