@@ -334,11 +334,20 @@ check_device() {
     format_output_column "SMART" "$SMART_HOURS"
     format_output_column "FARM" "$FARM_HOURS"
     format_output_column "DIFF" "$DIFF"
+    if [ $DIFF -gt 1 ]; then
+        format_output_column "ERR" "Power On Hours differ by more than 1 hour"
+        format_output_column "ERR" "This is very likely a fraudulent or tampered drive"
+    fi
     echo
     format_output_column "Head Flying Hours" ""
     format_output_column "SMART" "$SMART_FLYING_HOURS"
     format_output_column "FARM" "$FARM_FLYING_HOURS"
     format_output_column "DIFF" "$DIFF_FLYING"
+    if [ $DIFF_FLYING -gt 10 ]; then
+        format_output_column "WARN" "Head Flying Hours differ by more than 10 hours"
+        format_output_column "WARN" "This MAY indicate a fraudulent or tampered drive"
+        format_output_column "WARN" "But can also be due to different measurement methods"
+    fi
     echo
     format_output_column "Write Power On by Head" ""
     validate_head_hours "$FARM_OUTPUT"
