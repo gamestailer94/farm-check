@@ -3,6 +3,7 @@
 # Initialize parameters
 DEVICE_TYPE=""
 DEBUG=0
+VERBOSE=0
 
 # Parse command line arguments
 while [ $# -gt 0 ]; do
@@ -18,6 +19,12 @@ while [ $# -gt 0 ]; do
             ;;
         --debug)
             DEBUG=1
+            # implicitly set VERBOSE to 1
+            VERBOSE=1
+            shift
+            ;;
+        -v)
+            VERBOSE=1
             shift
             ;;
         *)
@@ -27,9 +34,10 @@ while [ $# -gt 0 ]; do
 done
 
 if [ $# -eq 0 ]; then
-    echo "Usage: $0 [-d device_type] [--debug] <block_device> [block_device2 ...]"
+    echo "Usage: $0 [-d device_type] [-v] [--debug] <block_device> [block_device2 ...]"
     echo "       Use ALL to try to find all block devices"
     echo "       Use -d to specify device type (see smartctl(8) for available types)"
+    echo "       Use -v to display verbose information"
     echo "       Use --debug to print full SMART data and FARM output for debugging"
     exit 1
 fi
@@ -102,8 +110,8 @@ validate_head_hours() {
             MAX_HEAD_NUMBER=$HEAD_NUMBER
         fi
         
-        # Debug output if requested
-        if [ $DEBUG -eq 1 ]; then
+        # Debug or verbose output if requested
+        if [ $VERBOSE -eq 1 ]; then
             format_output_column "Head $HEAD_NUMBER" "$SECONDS_VALUE seconds = $HOURS_VALUE hours"
         fi
     done < "$TEMP_HEAD_DATA"

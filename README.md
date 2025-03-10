@@ -16,6 +16,7 @@ In legitimate new Seagate drives, these values should be nearly identical. A sig
 
 ### Command Line Options
 - `-d device_type`: Specify the device type for smartctl (see smartctl(8) manual for available types)
+- `-v`: Enable verbose mode
 - `--debug`: Enable debug mode to print full SMART data and FARM output for debugging purposes
 
 ### Docker Usage (Recommended)
@@ -90,9 +91,10 @@ The tool outputs:
 - Device: Name of the device being checked
 - SMART: Power-on hours from SMART attributes
 - FARM: Power-on hours from Seagate FARM log (N/A for non-Seagate drives)
-- RESULT: 
-  - PASS: If the difference between SMART and FARM hours is ≤ 1
-  - FAIL: If the difference is > 1, suggesting potential fraud
+- HEAD: Information about head hours
+- RESULT:
+  - PASS: If the SMART and FARM Values are similar enough
+  - FAIL: If the difference smart and FARM values is greater
   - SKIP: If the drive is not a Seagate drive (no FARM data available)
 
 ## How it Works
