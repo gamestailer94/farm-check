@@ -123,7 +123,7 @@ validate_head_hours() {
     # Clean up temporary file
     rm -f "$TEMP_HEAD_DATA"
 
-    HEAD_FLYING_HOURS=$(echo "$FARM_OUTPUT" | awk '/Head Flying Hours/{print $4}')
+    HEAD_FLYING_HOURS=$(echo "$FARM_OUTPUT" | awk '/Head Flight Hours/{print $4}')
     
     # Validate that the maximum head hours is less than total power on hours
     if [ "$MAX_HEAD_HOURS" -gt "$HEAD_FLYING_HOURS" ]; then
