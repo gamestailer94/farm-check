@@ -99,10 +99,12 @@ format_output_column() {
         elif [ "$value2" = "FAIL" ]; then
             value2=$(echo -e "${RED}$value2${NC}")
         fi
-    elif [ "$value1" = "WARN" ]; then
-        value2=$(echo -e "${YELLOW}$value2${NC}")
-    elif [ "$value1" = "INF" ]; then
-        value2=$(echo -e "${BLUE}$value2${NC}")
+    elif [ "$value1" = "WARN:" ]; then
+        value1=$(echo -e "${YELLOW}$value1${NC}")
+    elif [ "$value1" = "INF:" ]; then
+        value1=$(echo -e "${BLUE}$value1${NC}")
+    elif [ "$value1" = "ERR:" ]; then
+        value1=$(echo -e "${RED}$value1${NC}")
     fi
 
     if [ -n "$value3" ]; then
