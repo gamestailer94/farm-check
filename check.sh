@@ -88,8 +88,13 @@ validate_head_hours() {
         HEAD_NUMBER=${HEAD_NUMBER%:}
         
         # Convert seconds to hours (integer division)
-        # TODO once new smartctl version is released division is no longer needed
-        HOURS_VALUE=$(( SECONDS_VALUE / 3600 ))
+        # Only divide by 3600 if smartctl version is exactly 7.4
+        # Newer versions don't have the display problem
+        if [ "$SMARTCTL_VERSION" = "7.4" ]; then
+            HOURS_VALUE=$(( SECONDS_VALUE / 3600 ))
+        else
+            HOURS_VALUE=$SECONDS_VALUE
+        fi
         
         # Check if this is the maximum value so far
         if [ "$HOURS_VALUE" -gt "$MAX_HEAD_HOURS" ]; then
