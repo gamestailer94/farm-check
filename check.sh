@@ -287,10 +287,6 @@ check_device() {
     SMART_HOURS=$(echo "$SMART_DATA" | awk '/Power_On_Hours/{print $10}' | head -n 1)
     FARM_HOURS=$(echo "$FARM_OUTPUT" | awk '/Power on Hours:/{print $4}' | head -n 1)
 
-    # Extract Head Flying Hours from SMART and FARM data
-    SMART_FLYING_HOURS=$(echo "$SMART_DATA" | awk '/Head_Flying_Hours/{split($10, a, "h"); print a[1]}' | head -n 1)
-    FARM_FLYING_HOURS=$(echo "$FARM_OUTPUT" | awk '/Head Flight Hours:/{print $4}')
-
     # Check if FARM hours are available
     if [ -z "$FARM_HOURS" ]; then
         format_output_column "INF" "FARM data not available - likely not a Seagate drive"
@@ -305,10 +301,6 @@ check_device() {
     DIFF=$(( SMART_HOURS - FARM_HOURS ))
     DIFF=${DIFF#-}  # Remove negative sign
 
-    # Calculate absolute difference for head flying hours
-    DIFF_FLYING=$(( SMART_FLYING_HOURS - FARM_FLYING_HOURS ))
-    DIFF_FLYING=${DIFF_FLYING#-}  # Remove negative sign
-
     # Determine power on hours difference result 
     RESULT="FAIL"
     if [ $DIFF -le 1 ]; then
@@ -322,6 +314,22 @@ check_device() {
         echo
         return $([ $RESULT = "PASS" ])
     fi
+
+    # Extract Head Flying Hours from SMART and FARM data
+    SMART_FLYING_HOURS=$(echo "$SMART_DATA" | awk '/Head_Flying_Hours/{split($10, a, "h"); print a[1]}' | head -n 1)
+    FARM_FLYING_HOURS=$(echo "$FARM_OUTPUT" | awk '/Head Flight Hours:/{print $4}')
+
+    # Calculate absolute difference for head flying hours
+    DIFF_FLYING=$(( SMART_FLYING_HOURS - FARM_FLYING_HOURS ))
+    DIFF_FLYING=${DIFF_FLYING#-}  # Remove negative sign
+
+    # Extract Assembly Date from FARM
+    ASSEMBLY_DATE=$(echo "$FARM_OUTPUT" | awk '/Assembly Date \(YYWW\):/{print $4}')
+    # split to year and week and reverse
+    ASSEMBLY_YEAR=$(echo "$ASSEMBLY_DATE" | cut -c 1-2 | rev)
+    ASSEMBLY_WEEK=$(echo "$ASSEMBLY_DATE" | cut -c 3-4 | rev)
+    # convert to full year
+    ASSEMBLY_YEAR=$(( 2000 + ASSEMBLY_YEAR ))
     
     format_output_column "Power on hours" ""
     format_output_column "SMART" "$SMART_HOURS"
@@ -344,6 +352,9 @@ check_device() {
     echo
     format_output_column "Write Power On by Head" ""
     validate_head_hours "$FARM_OUTPUT"
+    echo
+    format_output_column "Assembly Date" "$ASSEMBLY_YEAR" "Week $ASSEMBLY_WEEK"
+
     echo
     return $([ $RESULT = "PASS" ])
 }
