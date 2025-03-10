@@ -56,6 +56,67 @@ format_output_column() {
     printf "%-15s %s\n" "$name" "$value"
 }
 
+
+# Function to validate head hours
+validate_head_hours() {
+    local FARM_OUTPUT="$1"
+    local SMART_HOURS="$2"
+    
+    # Extract Write Power On values by Head
+    WRITE_POWER_ON_LINES=$(echo "$FARM_OUTPUT" | grep "Write Power On (hrs) by Head")
+    if [ -z "$WRITE_POWER_ON_LINES" ]; then
+        # No head data found
+        format_output_column "HEAD" "N/A (No head data found)"
+        return 0
+    fi
+    
+    # Initialize variables for tracking the maximum value
+    MAX_HEAD_HOURS=0
+    MAX_HEAD_NUMBER=""
+    
+    # Create a temporary file to store head data
+    TEMP_HEAD_DATA=$(mktemp)
+    
+    # Process each head's write power on time
+    echo "$WRITE_POWER_ON_LINES" > "$TEMP_HEAD_DATA"
+    
+    while read -r line; do
+        # Extract head number and seconds value
+        HEAD_NUMBER=$(echo "$line" | awk '{print $7}')
+        SECONDS_VALUE=$(echo "$line" | awk '{print $8}')
+        # remove : from the head number
+        HEAD_NUMBER=${HEAD_NUMBER%:}
+        
+        # Convert seconds to hours (integer division)
+        # TODO once new smartctl version is released division is no longer needed
+        HOURS_VALUE=$(( SECONDS_VALUE / 3600 ))
+        
+        # Check if this is the maximum value so far
+        if [ "$HOURS_VALUE" -gt "$MAX_HEAD_HOURS" ]; then
+            MAX_HEAD_HOURS=$HOURS_VALUE
+            MAX_HEAD_NUMBER=$HEAD_NUMBER
+        fi
+        
+        # Debug output if requested
+        if [ $DEBUG -eq 1 ]; then
+            format_output_column "Head $HEAD_NUMBER" "$SECONDS_VALUE seconds = $HOURS_VALUE hours"
+        fi
+    done < "$TEMP_HEAD_DATA"
+    
+    # Clean up temporary file
+    rm -f "$TEMP_HEAD_DATA"
+    
+    # Validate that the maximum head hours is less than total power on hours
+    if [ "$MAX_HEAD_HOURS" -gt "$SMART_HOURS" ]; then
+        format_output_column "HEAD" "FAIL (Head $MAX_HEAD_NUMBER: $MAX_HEAD_HOURS hrs > Total: $SMART_HOURS hrs)"
+        return 1
+    else
+        format_output_column "HEAD" "PASS (Max: $MAX_HEAD_HOURS hrs)"
+        return 0
+    fi
+}
+
+
 check_device() {
     local DEVICE=$1
     
@@ -122,6 +183,7 @@ check_device() {
         format_output_column "" "FARM data not available - likely not a Seagate drive"
         format_output_column "SMART" "$SMART_HOURS"
         format_output_column "FARM" "N/A"
+        format_output_column "HEAD" "N/A"
         format_output_column "RESULT" "SKIP"
         echo
         return
@@ -131,16 +193,27 @@ check_device() {
     DIFF=$(( SMART_HOURS - FARM_HOURS ))
     ABS_DIFF=${DIFF#-}  # Remove negative sign
     
-    # Determine result
-    RESULT="FAIL"
+    # Determine hours difference result
+    HOURS_RESULT="FAIL"
     if [ $ABS_DIFF -le 1 ]; then
-        RESULT="PASS"
+        HOURS_RESULT="PASS"
+    fi
+    
+    # Validate head hours
+    HEAD_RESULT=$(validate_head_hours "$FARM_OUTPUT" "$SMART_HOURS")
+    HEAD_STATUS=$?
+    
+    # Determine overall result
+    RESULT="PASS"
+    if [ "$HOURS_RESULT" = "FAIL" ] || [ $HEAD_STATUS -ne 0 ]; then
+        RESULT="FAIL"
     fi
     
     format_output_column "SMART" "$SMART_HOURS"
     format_output_column "FARM" "$FARM_HOURS"
+    echo "$HEAD_RESULT"
     format_output_column "RESULT" "$RESULT"
-
+    
     echo
 }
 
