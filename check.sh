@@ -84,9 +84,11 @@ validate_head_hours() {
         return 0
     fi
     
-    # Initialize variables for tracking the maximum value
+    # Initialize variables for tracking the maximum and minimum values
     MAX_HEAD_HOURS=0
     MAX_HEAD_NUMBER=""
+    MIN_HEAD_HOURS=999999999  # Start with a very high number
+    MIN_HEAD_NUMBER=""
     
     # Create a temporary file to store head data
     TEMP_HEAD_DATA=$(mktemp)
@@ -116,6 +118,12 @@ validate_head_hours() {
             MAX_HEAD_NUMBER=$HEAD_NUMBER
         fi
         
+        # Check if this is the minimum value so far (only if hours > 0)
+        if [ "$HOURS_VALUE" -gt 0 ] && [ "$HOURS_VALUE" -lt "$MIN_HEAD_HOURS" ]; then
+            MIN_HEAD_HOURS=$HOURS_VALUE
+            MIN_HEAD_NUMBER=$HEAD_NUMBER
+        fi
+        
         # Debug or verbose output if requested
         if [ $VERBOSE -eq 1 ]; then
             format_output_column "Head $HEAD_NUMBER" "$SECONDS_VALUE seconds = $HOURS_VALUE hours"
@@ -130,8 +138,25 @@ validate_head_hours() {
         format_output_column "HEAD" "FAIL (Head $MAX_HEAD_NUMBER: $MAX_HEAD_HOURS hrs > Total: $SMART_HOURS hrs)"
         return 1
     else
-        format_output_column "HEAD" "PASS (Max: $MAX_HEAD_HOURS hrs)"
-        return 0
+        # Check for substantial difference between min and max hours (>90%)
+        # Only if we have valid min and max values
+        if [ "$MIN_HEAD_HOURS" -ne 999999999 ] && [ "$MAX_HEAD_HOURS" -gt 0 ]; then
+            # Calculate the percentage difference
+            # (max - min) / max * 100 > 90
+            # Simplified: (max - min) > max * 0.9
+            # Further simplified for shell: (max - min) * 10 > max * 9
+            DIFF=$(( MAX_HEAD_HOURS - MIN_HEAD_HOURS ))
+            if [ $(( DIFF * 10 )) -gt $(( MAX_HEAD_HOURS * 9 )) ]; then
+                format_output_column "HEAD" "WARN (Max: $MAX_HEAD_HOURS hrs on Head $MAX_HEAD_NUMBER, Min: $MIN_HEAD_HOURS hrs on Head $MIN_HEAD_NUMBER)"
+                return 0
+            else
+                format_output_column "HEAD" "PASS (Max: $MAX_HEAD_HOURS hrs, Min: $MIN_HEAD_HOURS hrs)"
+                return 0
+            fi
+        else
+            format_output_column "HEAD" "PASS (Max: $MAX_HEAD_HOURS hrs, Min: $MIN_HEAD_HOURS hrs)"
+            return 0
+        fi
     fi
 }
 
